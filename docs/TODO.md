@@ -6,7 +6,12 @@ Legend: `[ ]` todo · `[x]` done · **(MVP)** = required for private beta
 - [ ] **(MVP)** Monorepo scaffold: `apps/web` (Next.js), `apps/api` (FastAPI), `workers/`, `scanners/`, `packages/schema`
 - [ ] **(MVP)** Docker Compose dev env: Postgres, Redis, API, worker, web
 - [ ] **(MVP)** GitHub Actions CI: lint (ruff, eslint), typecheck (mypy/pyright, tsc), tests, image builds
-- [ ] **(MVP)** Auth (sign up / login, GitHub OAuth) and org/workspace model
+- [ ] **(MVP)** LICENSE (AGPL-3.0) + NOTICE attribution term + UI footer credit
+- [ ] **(MVP)** Self-hosted auth: register/login/logout, argon2id, server-side sessions, CSRF/Origin check, login rate limit
+- [ ] **(MVP)** TOTP two-factor auth (secrets encrypted at rest)
+- [ ] **(MVP)** Workspace (org) model created on sign-up
+- [ ] Email verification + password reset (needs SMTP)
+- [ ] MFA recovery codes, passkeys (WebAuthn), GitHub login, generic OIDC
 - [ ] **(MVP)** DB schema + migrations: `users, orgs, targets, target_verifications, scans, scan_steps, findings, finding_groups, ai_enrichments, subscriptions, usage`
 - [ ] **(MVP)** Unified `Finding` schema (Pydantic, exported as JSON Schema → TS types)
 - [ ] Settings: env config, secrets management, Sentry
@@ -39,13 +44,15 @@ Legend: `[ ]` todo · `[x]` done · **(MVP)** = required for private beta
 - [ ] "Mark false positive / accepted risk" and feed it back into future scans
 - [ ] Eval set: sample findings with expected verdicts to regression-test prompts
 
-## Phase 3 — Trial & subscriptions
-- [ ] **(MVP)** Stripe products/prices, Checkout, Customer Portal, webhooks
-- [ ] **(MVP)** 14-day trial logic + plan entitlements + quota enforcement in API
+## Phase 3 — Self-host release
+- [ ] **(MVP)** Admin-configurable quotas + enforcement in API
 - [ ] **(MVP)** Usage metering (scans, targets, AI tokens)
-- [ ] **(MVP)** Transactional emails (verify email, scan finished, trial ending)
-- [ ] **(MVP)** Landing page, pricing page, ToS, Privacy Policy, Acceptable Use / authorization attestation
-- [ ] **🚀 Private beta launch**
+- [ ] **(MVP)** Admin panel: users, workspaces, domain blocklist, kill switch
+- [ ] **(MVP)** Transactional emails via SMTP (verify email, scan finished)
+- [ ] **(MVP)** Install guide, upgrade guide, backup guide, hardening checklist
+- [ ] **(MVP)** ToS / Acceptable Use templates + authorization attestation
+- [ ] Optional billing module: Stripe trial + subscriptions mapped to quotas (off by default)
+- [ ] **🚀 v0.1 public release**
 
 ## Phase 4 — GitHub code scanning
 - [ ] Register GitHub App (read-only Contents + Metadata; later Checks / PRs write)
@@ -73,8 +80,8 @@ Legend: `[ ]` todo · `[x]` done · **(MVP)** = required for private beta
 - [ ] SOC 2-lite hygiene: backups, access reviews, incident runbook
 
 ## Open decisions (need your input)
-- [ ] Hosting budget & region (EU vs US data residency?)
-- [ ] Auth provider: Clerk (fast) vs self-hosted Auth.js
-- [ ] Queue: start with ARQ or go straight to Temporal
-- [ ] Final pricing numbers
-- [ ] Product name / domain
+- [x] Distribution: open source, self-hosted, AGPL-3.0 + attribution
+- [x] Auth: self-hosted, built into the API, security-hardened
+- [x] Queue: Redis + ARQ
+- [x] Name: SecAI
+- [ ] Default pricing numbers for the optional billing module

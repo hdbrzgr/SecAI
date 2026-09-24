@@ -8,7 +8,7 @@ A self-serve SaaS where developers and small teams scan **their own** web projec
 2. **Code scanning (SAST/SCA/secrets)** — connect GitHub, scan repositories for insecure code, vulnerable dependencies, leaked secrets and misconfigurations.
 3. **AI analyst** — deduplicates and triages tool output, removes likely false positives, explains each issue in plain language, rates real-world risk, and gives concrete fixes (code snippets / config changes for the detected stack).
 
-Monetization: free trial (limited scans) → paid subscriptions (more targets, deeper scans, scheduling, GitHub integration, PDF reports, team seats).
+**Distribution model: open source & self-hosted.** Anyone can run SecAI on their own server (Docker Compose first, Kubernetes later) under the AGPL-3.0 license, provided they keep the visible "Powered by SecAI by hdbrzgr" attribution (see [NOTICE](../NOTICE)). Instance admins can optionally turn on a billing module (Stripe) to offer SecAI as a hosted service with trials and subscriptions.
 
 ## 2. Non-negotiables (legal & safety)
 
@@ -88,7 +88,9 @@ Pipeline per scan:
 - **Safety:** redact secrets/tokens/PII before LLM calls; the AI never *executes* anything — it only interprets results. Humans (users) decide.
 - **Later:** "Chat with your report", auto-generated fix PRs on GitHub, verification re-scan of a single finding.
 
-## 6. Plans & limits (initial proposal)
+## 6. Quotas & optional plans
+
+Self-hosted instances use **admin-configurable quotas** (targets, scans/month, AI budget per workspace). The optional **billing module** (disabled by default) maps Stripe plans onto the same quota system. The table below is the default preset for someone running a public hosted instance:
 
 | | Free trial (14 days) | Starter | Pro | Team |
 |---|---|---|---|---|
@@ -100,16 +102,16 @@ Pipeline per scan:
 | AI fix guidance | Top 5 findings | All | All + code patches | All + fix PRs |
 | Reports | Web | + PDF | + PDF/branding | + SSO, seats |
 
-Enforce limits in the API (quota table) and gate features by plan via Stripe entitlements.
+Enforce limits in the API (quota table). When billing is enabled, Stripe webhooks update the workspace's quota/plan.
 
 ## 7. Phased roadmap
 
 | Phase | Goal | Outcome |
 |---|---|---|
-| **0. Foundation** (1–2 wks) | Repo, CI, Docker dev env, auth, DB schema | Users can sign up and see an empty dashboard. |
+| **0. Foundation** (1–2 wks) | Repo, CI, Docker Compose, secure self-hosted auth, DB schema, license/attribution | Users can sign up (with optional 2FA) and see an empty dashboard. |
 | **1. DAST MVP** (3–4 wks) | Domain verification + headers/TLS/Nuclei/ZAP baseline + normalizer | First real scan report (raw findings). |
 | **2. AI reports** (2 wks) | Enrichment pipeline, summary, fix guidance, PDF | "Aha" moment: readable, prioritized report. |
-| **3. Monetization** (1–2 wks) | Stripe trial + subscriptions, quotas, emails | Can charge money. **Private beta launch.** |
+| **3. Self-host release** (1–2 wks) | Quotas, admin panel, emails, install docs, optional Stripe billing module | **v0.1 public release.** |
 | **4. GitHub SAST** (3–4 wks) | GitHub App, repo scan with Opengrep/OSV/Gitleaks/Trivy | Code scanning reports. |
 | **5. Depth & retention** (ongoing) | Scheduled scans, diffs, authenticated DAST, PR comments/checks, auto-fix PRs, Slack/email alerts, team accounts | Stickiness & upsell. |
 
