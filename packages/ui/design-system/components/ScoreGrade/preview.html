@@ -1,0 +1,26 @@
+<!-- @dsCard group="Security" height=120 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>ScoreGrade</title>
+<style>
+  .ds-row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+  .ds-stack { display: flex; flex-direction: column; gap: var(--space-4); }
+  .ds-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-5); }
+  .ds-flush { border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden; }
+  .ds-flush > :last-child { border-bottom: 0; }
+  #root { padding: var(--space-4); }
+</style>
+</head>
+<body class="sx-root">
+<div id="root"></div>
+<script>
+  var S = window.SecAI, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(
+    h('div',{className:'ds-row',style:{gap:'40px'}},
+      h(S.ScoreGrade,{grade:'B',score:82,caption:'Up 6 since last scan'}),
+      h(S.ScoreGrade,{grade:'C',score:64}),
+      h(S.ScoreGrade,{grade:'F',score:31,caption:'3 critical findings'}))
+  );
+</script>
+</body>
+</html>

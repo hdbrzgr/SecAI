@@ -1,0 +1,26 @@
+<!-- @dsCard group="Status" height=310 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Alert</title>
+<style>
+  .ds-row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+  .ds-stack { display: flex; flex-direction: column; gap: var(--space-4); }
+  .ds-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-5); }
+  .ds-flush { border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden; }
+  .ds-flush > :last-child { border-bottom: 0; }
+  #root { padding: var(--space-4); }
+</style>
+</head>
+<body class="sx-root">
+<div id="root"></div>
+<script>
+  var S = window.SecAI, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(
+    h('div',{className:'ds-stack'},
+      h(S.Alert,{tone:'success',title:'example.com is verified'},'You can now run full scans on this site.'),
+      h(S.Alert,{tone:'warning',title:'The scan finished with 2 tools skipped',action:h(S.Button,{size:'sm'},'Re-run')},'The site stopped responding to ZAP after 3 minutes. Results from Nuclei and the header checks are complete.'),
+      h(S.Alert,{tone:'danger',title:'The TXT record on example.com isn\u2019t visible yet'},'DNS changes can take a few minutes, so try again shortly.'))
+  );
+</script>
+</body>
+</html>

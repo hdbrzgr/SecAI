@@ -1,0 +1,155 @@
+{
+  "artifact": "https://claude.ai/artifact/Eu7M6wukvHRi69oLHyuLSE",
+  "icons": {
+    "shield-check.svg": {
+      "name": "shield-check.svg",
+      "blob": "28e81552fd96749e51215cf4164d893f",
+      "size": 440,
+      "type": "image/svg+xml"
+    },
+    "shield-alert.svg": {
+      "name": "shield-alert.svg",
+      "blob": "786546ecd30ec3442dbba071afcdfce7",
+      "size": 465,
+      "type": "image/svg+xml"
+    },
+    "scan-search.svg": {
+      "name": "scan-search.svg",
+      "blob": "1c74a64acfb1b6ee7c7968b272a9e4ee",
+      "size": 477,
+      "type": "image/svg+xml"
+    },
+    "scan-line.svg": {
+      "name": "scan-line.svg",
+      "blob": "8bb323ed3c3272d3fafb5ead903007f4",
+      "size": 427,
+      "type": "image/svg+xml"
+    },
+    "radar.svg": {
+      "name": "radar.svg",
+      "blob": "f4e222aa5911a3eb6c73fcc66fd771e7",
+      "size": 577,
+      "type": "image/svg+xml"
+    },
+    "bug.svg": {
+      "name": "bug.svg",
+      "blob": "9ed4bc60786e367d2085854073e2b418",
+      "size": 676,
+      "type": "image/svg+xml"
+    },
+    "globe.svg": {
+      "name": "globe.svg",
+      "blob": "2a79ce4e598b8d178d93c01d1de141e8",
+      "size": 356,
+      "type": "image/svg+xml"
+    },
+    "server.svg": {
+      "name": "server.svg",
+      "blob": "5656b72ef11b97abce1bbd555fe5adaf",
+      "size": 442,
+      "type": "image/svg+xml"
+    },
+    "folder-git-2.svg": {
+      "name": "folder-git-2.svg",
+      "blob": "1da95d5f555c54a1bd7680ad99b30a8a",
+      "size": 473,
+      "type": "image/svg+xml"
+    },
+    "git-branch.svg": {
+      "name": "git-branch.svg",
+      "blob": "d451b7a2a4ce18ae9e7afd453c79be36",
+      "size": 345,
+      "type": "image/svg+xml"
+    },
+    "file-code.svg": {
+      "name": "file-code.svg",
+      "blob": "15269395585ab667ec5b3fc5b5d8b45c",
+      "size": 476,
+      "type": "image/svg+xml"
+    },
+    "file-lock-2.svg": {
+      "name": "file-lock-2.svg",
+      "blob": "b90bc526628c0ac3c661230e7ad74cfd",
+      "size": 488,
+      "type": "image/svg+xml"
+    },
+    "key-round.svg": {
+      "name": "key-round.svg",
+      "blob": "41888aa8dbeed1534d378c3cabcf3e96",
+      "size": 477,
+      "type": "image/svg+xml"
+    },
+    "lock.svg": {
+      "name": "lock.svg",
+      "blob": "4b6e84c66873b14362c93f422ced3fa0",
+      "size": 326,
+      "type": "image/svg+xml"
+    },
+    "octagon-alert.svg": {
+      "name": "octagon-alert.svg",
+      "blob": "97b7a7bc56177fdaa32a6ff5ec168f16",
+      "size": 541,
+      "type": "image/svg+xml"
+    },
+    "triangle-alert.svg": {
+      "name": "triangle-alert.svg",
+      "blob": "35d73963660da9cfbf5f70595e3b8e49",
+      "size": 377,
+      "type": "image/svg+xml"
+    },
+    "info.svg": {
+      "name": "info.svg",
+      "blob": "b437ab7af732d5693d4dda891a4586fd",
+      "size": 318,
+      "type": "image/svg+xml"
+    },
+    "circle-check.svg": {
+      "name": "circle-check.svg",
+      "blob": "541d2e1b846d9788913cb4dc7e555af2",
+      "size": 305,
+      "type": "image/svg+xml"
+    },
+    "circle-x.svg": {
+      "name": "circle-x.svg",
+      "blob": "cc4b72be6470985a028701c9f9e83891",
+      "size": 321,
+      "type": "image/svg+xml"
+    },
+    "clock.svg": {
+      "name": "clock.svg",
+      "blob": "900201ad839b68251b1fb095c1ee1bd2",
+      "size": 291,
+      "type": "image/svg+xml"
+    },
+    "copy.svg": {
+      "name": "copy.svg",
+      "blob": "629beac3bf3bbd1d5a965ea13a400b24",
+      "size": 356,
+      "type": "image/svg+xml"
+    },
+    "external-link.svg": {
+      "name": "external-link.svg",
+      "blob": "856e74a2f6ee0c91bc682589b3efa240",
+      "size": 363,
+      "type": "image/svg+xml"
+    },
+    "refresh-cw.svg": {
+      "name": "refresh-cw.svg",
+      "blob": "0dce046f4fdca4ce0d5a34bc3c419f2a",
+      "size": 425,
+      "type": "image/svg+xml"
+    },
+    "settings.svg": {
+      "name": "settings.svg",
+      "blob": "cfd23e23eb4a545695716982584b2430",
+      "size": 609,
+      "type": "image/svg+xml"
+    },
+    "log-out.svg": {
+      "name": "log-out.svg",
+      "blob": "9139b9d03972aa4fca77d774cf609178",
+      "size": 342,
+      "type": "image/svg+xml"
+    }
+  }
+}

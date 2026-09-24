@@ -1,0 +1,81 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SecAI</title>
+<style>
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--canvas); color: var(--ink); font-family: var(--font-sans); overflow: hidden; }
+  .cover { position: relative; width: 960px; height: 288px; overflow: hidden; }
+  .art { position: absolute; top: 0; left: 480px; width: 480px; height: 288px; overflow: hidden; }
+  .art svg { display: block; }
+  .brand { fill: var(--signal); }
+  .brand-deep { fill: var(--signal-strong); }
+  .night { fill: var(--night); }
+  .mark { fill: var(--on-night); }
+  .pip { fill: var(--sev-critical); rx: var(--radius-xs); }
+  .blk { rx: var(--radius-md); }
+  .words { position: absolute; left: var(--space-6); bottom: var(--space-6); max-width: 440px; }
+  .name { margin: 0; font-family: var(--font-display); font-size: 120px; line-height: .92; font-weight: 700; letter-spacing: -0.01em; color: var(--ink); }
+  .name span { color: var(--signal); }
+  .tag { margin: var(--space-3) 0 0 4px; font-size: 14px; line-height: 20px; color: var(--ink-muted); }
+</style>
+</head>
+<body>
+<div class="cover">
+<div class="art" aria-hidden="true">
+<svg viewBox="0 0 480 288" width="480" height="288">
+<!--
+  blocks      signal 112x208 slab bled off the top · signal-strong 112x48 under it · night 344x272 bled off the top and right edge (the deep ground of a scan) · sev-critical only as four 4x24 pips
+  arrangement a flush modular grid like a report layout: one tall signal slab with its satellite, then the night panel; gutters space-4, bottoms on one line space-5 above the edge
+  pattern     a plus grid in on-night at a space-7 pitch across the night panel, from "Exact over decorative / a precise instrument"; one cell holds the SeverityBadge meter (4 pips) instead of a plus: the one finding in the scan
+  scales      gutters space-4 (16); pitch space-7 (48); plus arms 12 = space-3; pip 4x24 at an 8 gap (space-2); corners radius-md on blocks, radius-xs on pips
+-->
+<rect class="brand blk" x="16" y="-8" width="112" height="208" rx="6"/>
+<rect class="brand-deep blk" x="16" y="216" width="112" height="48" rx="6"/>
+<rect class="night blk" x="144" y="-8" width="344" height="272" rx="6"/>
+<rect class="mark" x="170" y="31" width="12" height="2"/><rect class="mark" x="175" y="26" width="2" height="12"/>
+<rect class="mark" x="170" y="79" width="12" height="2"/><rect class="mark" x="175" y="74" width="2" height="12"/>
+<rect class="mark" x="170" y="127" width="12" height="2"/><rect class="mark" x="175" y="122" width="2" height="12"/>
+<rect class="mark" x="170" y="175" width="12" height="2"/><rect class="mark" x="175" y="170" width="2" height="12"/>
+<rect class="mark" x="170" y="223" width="12" height="2"/><rect class="mark" x="175" y="218" width="2" height="12"/>
+<rect class="mark" x="218" y="31" width="12" height="2"/><rect class="mark" x="223" y="26" width="2" height="12"/>
+<rect class="mark" x="218" y="79" width="12" height="2"/><rect class="mark" x="223" y="74" width="2" height="12"/>
+<rect class="mark" x="218" y="127" width="12" height="2"/><rect class="mark" x="223" y="122" width="2" height="12"/>
+<rect class="mark" x="218" y="175" width="12" height="2"/><rect class="mark" x="223" y="170" width="2" height="12"/>
+<rect class="mark" x="218" y="223" width="12" height="2"/><rect class="mark" x="223" y="218" width="2" height="12"/>
+<rect class="mark" x="266" y="31" width="12" height="2"/><rect class="mark" x="271" y="26" width="2" height="12"/>
+<rect class="mark" x="266" y="79" width="12" height="2"/><rect class="mark" x="271" y="74" width="2" height="12"/>
+<rect class="mark" x="266" y="127" width="12" height="2"/><rect class="mark" x="271" y="122" width="2" height="12"/>
+<rect class="mark" x="266" y="223" width="12" height="2"/><rect class="mark" x="271" y="218" width="2" height="12"/>
+<rect class="mark" x="314" y="31" width="12" height="2"/><rect class="mark" x="319" y="26" width="2" height="12"/>
+<rect class="mark" x="314" y="79" width="12" height="2"/><rect class="mark" x="319" y="74" width="2" height="12"/>
+<rect class="mark" x="314" y="127" width="12" height="2"/><rect class="mark" x="319" y="122" width="2" height="12"/>
+<rect class="mark" x="314" y="175" width="12" height="2"/><rect class="mark" x="319" y="170" width="2" height="12"/>
+<rect class="mark" x="314" y="223" width="12" height="2"/><rect class="mark" x="319" y="218" width="2" height="12"/>
+<rect class="mark" x="362" y="31" width="12" height="2"/><rect class="mark" x="367" y="26" width="2" height="12"/>
+<rect class="mark" x="362" y="79" width="12" height="2"/><rect class="mark" x="367" y="74" width="2" height="12"/>
+<rect class="mark" x="362" y="127" width="12" height="2"/><rect class="mark" x="367" y="122" width="2" height="12"/>
+<rect class="mark" x="362" y="175" width="12" height="2"/><rect class="mark" x="367" y="170" width="2" height="12"/>
+<rect class="mark" x="362" y="223" width="12" height="2"/><rect class="mark" x="367" y="218" width="2" height="12"/>
+<rect class="mark" x="410" y="31" width="12" height="2"/><rect class="mark" x="415" y="26" width="2" height="12"/>
+<rect class="mark" x="410" y="79" width="12" height="2"/><rect class="mark" x="415" y="74" width="2" height="12"/>
+<rect class="mark" x="410" y="127" width="12" height="2"/><rect class="mark" x="415" y="122" width="2" height="12"/>
+<rect class="mark" x="410" y="175" width="12" height="2"/><rect class="mark" x="415" y="170" width="2" height="12"/>
+<rect class="mark" x="410" y="223" width="12" height="2"/><rect class="mark" x="415" y="218" width="2" height="12"/>
+<rect class="mark" x="458" y="31" width="12" height="2"/><rect class="mark" x="463" y="26" width="2" height="12"/>
+<rect class="mark" x="458" y="79" width="12" height="2"/><rect class="mark" x="463" y="74" width="2" height="12"/>
+<rect class="mark" x="458" y="127" width="12" height="2"/><rect class="mark" x="463" y="122" width="2" height="12"/>
+<rect class="mark" x="458" y="175" width="12" height="2"/><rect class="mark" x="463" y="170" width="2" height="12"/>
+<rect class="mark" x="458" y="223" width="12" height="2"/><rect class="mark" x="463" y="218" width="2" height="12"/>
+<rect class="pip" x="258" y="164" width="4" height="24"/><rect class="pip" x="266" y="164" width="4" height="24"/><rect class="pip" x="274" y="164" width="4" height="24"/><rect class="pip" x="282" y="164" width="4" height="24"/>
+</svg>
+</div>
+<div class="words">
+<h1 class="name">Sec<span>AI</span></h1>
+<p class="tag">Precise, calm security scanning for the sites and code you own.</p>
+</div>
+</div>
+</body>
+</html>

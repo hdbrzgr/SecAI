@@ -1,0 +1,29 @@
+<!-- @dsCard group="Security" height=240 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>CodeBlock</title>
+<style>
+  .ds-row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+  .ds-stack { display: flex; flex-direction: column; gap: var(--space-4); }
+  .ds-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-5); }
+  .ds-flush { border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden; }
+  .ds-flush > :last-child { border-bottom: 0; }
+  #root { padding: var(--space-4); }
+</style>
+</head>
+<body class="sx-root">
+<div id="root"></div>
+<script>
+  var S = window.SecAI, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(
+    h('div',{className:'ds-stack'},
+      h(S.CodeBlock,{title:'app/search.py',startLine:41,lines:[
+        '@app.get("/search")',
+        'def search(q: str):',
+        {kind:'remove',text:'    rows = db.execute(f"SELECT * FROM posts WHERE title LIKE \'%{q}%\'")'},
+        {kind:'add',text:'    rows = db.execute("SELECT * FROM posts WHERE title LIKE :q", {"q": f"%{q}%"})'},
+        '    return render("search.html", rows=rows)']}))
+  );
+</script>
+</body>
+</html>

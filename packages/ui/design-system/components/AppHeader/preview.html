@@ -1,0 +1,23 @@
+<!-- @dsCard group="Layout" height=90 width=960 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>AppHeader</title>
+<style>
+  .ds-row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+  .ds-stack { display: flex; flex-direction: column; gap: var(--space-4); }
+  .ds-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-5); }
+  .ds-flush { border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden; }
+  .ds-flush > :last-child { border-bottom: 0; }
+  #root { padding: var(--space-4); }
+</style>
+</head>
+<body class="sx-root">
+<div id="root"></div>
+<script>
+  var S = window.SecAI, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(
+    h(S.AppHeader,{nav:[{label:'Dashboard',href:'#',active:true},{label:'Websites',href:'#'},{label:'Repositories',href:'#'},{label:'Settings',href:'#'}],actions:h(S.Button,{variant:'ghost',size:'sm',icon:'log-out'},'Sign out')})
+  );
+</script>
+</body>
+</html>
