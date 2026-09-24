@@ -3,18 +3,23 @@
 Legend: `[ ]` todo · `[x]` done · **(MVP)** = required for private beta
 
 ## Phase 0 — Foundation
-- [ ] **(MVP)** Monorepo scaffold: `apps/web` (Next.js), `apps/api` (FastAPI), `workers/`, `scanners/`, `packages/schema`
-- [ ] **(MVP)** Docker Compose dev env: Postgres, Redis, API, worker, web
-- [ ] **(MVP)** GitHub Actions CI: lint (ruff, eslint), typecheck (mypy/pyright, tsc), tests, image builds
-- [ ] **(MVP)** LICENSE (AGPL-3.0) + NOTICE attribution term + UI footer credit
-- [ ] **(MVP)** Self-hosted auth: register/login/logout, argon2id, server-side sessions, CSRF/Origin check, login rate limit
-- [ ] **(MVP)** TOTP two-factor auth (secrets encrypted at rest)
-- [ ] **(MVP)** Workspace (org) model created on sign-up
+- [x] **(MVP)** Monorepo scaffold: `apps/web` (Next.js), `apps/api` (FastAPI + ARQ worker); `scanners/` added in Phase 1
+- [x] **(MVP)** Docker Compose dev env: Postgres, Redis, API, worker, web
+- [x] **(MVP)** GitHub Actions CI: lint (ruff, eslint), typecheck (tsc), tests on Postgres, migration check, image builds
+- [ ] Python type checking (mypy or pyright) in CI
+- [x] **(MVP)** LICENSE (AGPL-3.0) + NOTICE attribution term + UI footer credit
+- [x] **(MVP)** Self-hosted auth: register/login/logout, argon2id, server-side sessions, CSRF/Origin check, login rate limit
+- [x] **(MVP)** TOTP two-factor auth (secrets encrypted at rest)
+- [x] **(MVP)** Workspace (org) model created on sign-up
 - [ ] Email verification + password reset (needs SMTP)
 - [ ] MFA recovery codes, passkeys (WebAuthn), GitHub login, generic OIDC
-- [ ] **(MVP)** DB schema + migrations: `users, orgs, targets, target_verifications, scans, scan_steps, findings, finding_groups, ai_enrichments, subscriptions, usage`
+- [ ] Worker cron job that deletes expired sessions
+- [x] **(MVP)** DB schema + migrations (Alembic): users, sessions, organizations, memberships, targets, scans, findings
+- [ ] Remaining tables as their phases need them: scan_steps, finding_groups, ai_enrichments, usage/quotas
 - [ ] **(MVP)** Unified `Finding` schema (Pydantic, exported as JSON Schema → TS types)
-- [ ] Settings: env config, secrets management, Sentry
+- [x] Settings: env config (`SECAI_*`), refuses to start in production with a weak secret or plain-http origin
+- [ ] Optional Sentry / OpenTelemetry
+- [ ] Trusted-proxy config so per-IP rate limits can't be bypassed with a spoofed `X-Forwarded-For` when the API sits behind extra proxies
 
 ## Phase 1 — Website pentest (DAST) MVP
 - [ ] **(MVP)** Add target (URL) + normalize/validate

@@ -1,0 +1,12 @@
+# SecAI web
+
+Next.js front end. It talks to the API only through `/api/*`, which Next.js proxies to
+`API_INTERNAL_URL` (default `http://localhost:8000`), so the session cookie stays first-party.
+
+```bash
+npm install
+npm run dev        # http://localhost:3000 (API must be running on :8000)
+npm run lint && npm run typecheck && npm run build
+```
+
+Keep the `Attribution` footer visible; it is required by the license (see `/NOTICE`).

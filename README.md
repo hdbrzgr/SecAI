@@ -6,6 +6,41 @@ Open-source, self-hostable, AI-powered security scanning. Users verify they own 
 - **Roadmap / TODO:** [docs/TODO.md](docs/TODO.md)
 - **Stack decisions:** [docs/STACK.md](docs/STACK.md)
 
+## Quick start (self-hosted)
+
+Requirements: Docker with Compose.
+
+```bash
+git clone https://github.com/hdbrzgr/SecAI.git && cd SecAI
+cp .env.example .env
+# Set SECAI_SECRET_KEY and POSTGRES_PASSWORD in .env
+# (python3 -c "import secrets; print(secrets.token_urlsafe(48))")
+docker compose up -d --build
+```
+
+Open http://localhost:3000 and create an account. **The first account becomes the instance admin.** Then set `SECAI_ALLOW_REGISTRATION=false` if you don't want public sign-ups.
+
+For a real deployment, put a TLS reverse proxy (Caddy, Traefik, nginx) in front of port 3000, set `SECAI_WEB_ORIGIN=https://your-domain` and `SECAI_ENV=production`.
+
+## Development
+
+| Part | Location | Commands |
+|---|---|---|
+| API (FastAPI) | `apps/api` | `uv sync` · `uv run uvicorn app.main:app --reload` · `uv run pytest` · `uv run ruff check .` · `uv run alembic upgrade head` |
+| Worker (ARQ) | `apps/api/app/worker.py` | `uv run arq app.worker.WorkerSettings` |
+| Web (Next.js) | `apps/web` | `npm install` · `npm run dev` · `npm run lint` · `npm run typecheck` |
+
+The API needs Postgres and Redis. The simplest way to get them locally is `docker compose up -d postgres redis`, then publish their ports or use local installs. See `apps/api/app/core/config.py` for every `SECAI_*` setting.
+
+## Security design (so far)
+
+- Passwords hashed with **argon2id**. Login timing is the same whether or not the account exists.
+- **Server-side sessions:** random tokens stored only as SHA-256 hashes. Cookies are HttpOnly, SameSite=Lax, and Secure + `__Host-` prefixed on HTTPS. Sessions have idle and absolute expiry.
+- **CSRF protection:** every state-changing request must come from the web app's origin.
+- **Rate limiting** on login (per IP and per email), registration and 2FA attempts.
+- **TOTP two-factor auth:** secrets are encrypted at rest, codes can't be replayed, and the session token is rotated after the second factor.
+- Security headers on the API and web app (CSP, frame blocking, nosniff, HSTS on HTTPS). Containers run as non-root, and the API isn't exposed outside the Docker network.
+
 ## License
 
 SecAI is free software under the **GNU AGPL-3.0** with one extra term (AGPL §7(b)): anyone running, hosting or distributing SecAI must keep the visible **"Powered by SecAI by hdbrzgr"** credit in the UI. If you host a modified version, you must publish your changes. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
