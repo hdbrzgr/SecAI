@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
-import { Button, Card, ErrorText, Input } from "@/components/ui";
+import { Alert, Button, Card, TextField } from "@secai/ui";
 import { api, ApiError } from "@/lib/api";
 
 export default function RegisterPage() {
@@ -26,20 +26,20 @@ export default function RegisterPage() {
       });
       router.push("/dashboard");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Could not create account");
+      setError(err instanceof ApiError ? err.message : "Couldn't create the account. Check your connection and try again.");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <Card className="mx-auto max-w-sm">
-      <h1 className="mb-6 text-xl font-semibold">Create your account</h1>
+    <Card title="Create your account">
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <Input label="Name" name="name" autoComplete="name" />
-        <Input label="Email" name="email" type="email" autoComplete="email" required />
-        <Input
-          label="Password (12+ characters)"
+        <TextField label="Name" name="name" autoComplete="name" />
+        <TextField label="Email" name="email" type="email" autoComplete="email" required />
+        <TextField
+          label="Password"
+          hint="At least 12 characters. A short sentence works well."
           name="password"
           type="password"
           autoComplete="new-password"
@@ -47,14 +47,14 @@ export default function RegisterPage() {
           maxLength={128}
           required
         />
-        <ErrorText>{error}</ErrorText>
-        <Button type="submit" disabled={busy}>
+        {error && <Alert tone="danger" title={error} />}
+        <Button type="submit" variant="primary" size="lg" loading={busy}>
           Create account
         </Button>
       </form>
-      <p className="mt-6 text-sm text-muted">
+      <p className="mt-5 mb-0 text-[14px] text-ink-muted">
         Already have an account?{" "}
-        <Link href="/login" className="text-foreground underline">
+        <Link href="/login" className="text-link">
           Sign in
         </Link>
       </p>

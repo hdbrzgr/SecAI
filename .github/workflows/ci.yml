@@ -41,40 +41,24 @@ jobs:
 
   web:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/web
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: apps/web/package-lock.json
       - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm run build
-
-  ui:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: packages/ui
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: packages/ui/package-lock.json
-      - run: npm ci
-      - run: npm run check
-      - run: npm run build
+      - name: Design system contrast check
+        run: npm run check -w @secai/ui
+      - name: Design system build (generated files must be committed)
+        run: npm run build -w @secai/ui && git diff --exit-code -- packages/ui/src
+      - run: npm run lint -w secai-web
+      - run: npm run typecheck -w secai-web
+      - run: npm run build -w secai-web
 
   docker:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - run: docker build -t secai-api apps/api
-      - run: docker build -t secai-web apps/web
+      - run: docker build -t secai-web -f apps/web/Dockerfile .

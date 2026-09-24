@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
-import { Button, Card, ErrorText, Input } from "@/components/ui";
+import { Alert, Button, Card, TextField } from "@secai/ui";
 import { api, ApiError, type LoginResult } from "@/lib/api";
 
 export default function LoginPage() {
@@ -27,22 +27,19 @@ export default function LoginPage() {
       if (result.mfa_required) setStep("mfa");
       else router.push("/dashboard");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Could not sign in");
+      setError(err instanceof ApiError ? err.message : "Couldn't sign in. Check your connection and try again.");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <Card className="mx-auto max-w-sm">
-      <h1 className="mb-6 text-xl font-semibold">
-        {step === "password" ? "Sign in" : "Two-factor authentication"}
-      </h1>
+    <Card title={step === "password" ? "Sign in" : "Two-factor authentication"}>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         {step === "password" ? (
           <>
-            <Input label="Email" name="email" type="email" autoComplete="email" required />
-            <Input
+            <TextField label="Email" name="email" type="email" autoComplete="email" required />
+            <TextField
               label="Password"
               name="password"
               type="password"
@@ -51,10 +48,12 @@ export default function LoginPage() {
             />
           </>
         ) : (
-          <Input
+          <TextField
             key="code"
-            label="6-digit code from your authenticator app"
+            label="Code"
+            hint="The 6-digit code from your authenticator app."
             name="code"
+            mono
             inputMode="numeric"
             autoComplete="one-time-code"
             pattern="[0-9 ]{6,8}"
@@ -62,14 +61,14 @@ export default function LoginPage() {
             required
           />
         )}
-        <ErrorText>{error}</ErrorText>
-        <Button type="submit" disabled={busy}>
+        {error && <Alert tone="danger" title={error} />}
+        <Button type="submit" variant="primary" size="lg" loading={busy}>
           {step === "password" ? "Sign in" : "Verify"}
         </Button>
       </form>
-      <p className="mt-6 text-sm text-muted">
-        No account?{" "}
-        <Link href="/register" className="text-foreground underline">
+      <p className="mt-5 mb-0 text-[14px] text-ink-muted">
+        No account yet?{" "}
+        <Link href="/register" className="text-link">
           Create one
         </Link>
       </p>

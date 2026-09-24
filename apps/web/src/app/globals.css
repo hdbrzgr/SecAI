@@ -1,42 +1,49 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #0f172a;
-  --surface: #f8fafc;
-  --border: #e2e8f0;
-  --muted: #64748b;
-  --accent: #0f766e;
-  --accent-foreground: #ffffff;
-  --danger: #b91c1c;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0b1120;
-    --foreground: #e2e8f0;
-    --surface: #111827;
-    --border: #1f2937;
-    --muted: #94a3b8;
-    --accent: #14b8a6;
-    --accent-foreground: #042f2e;
-    --danger: #f87171;
-  }
-}
-
+/* Tailwind is used for page layout only. Colors, type and components come from @secai/ui
+   (tokens.css and styles.css, imported in the root layout); these aliases let layout
+   utilities use the same tokens. Tailwind's font-sans/font-mono utilities already read
+   --font-sans/--font-mono, which tokens.css sets. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-canvas: var(--canvas);
   --color-surface: var(--surface);
-  --color-border: var(--border);
-  --color-muted: var(--muted);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-danger: var(--danger);
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --color-surface-sunken: var(--surface-sunken);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-signal: var(--signal);
+  --color-night: var(--night);
+  --color-on-night: var(--on-night);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
+.page-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 34px;
+  line-height: 40px;
+  text-wrap: balance;
+}
+.eyebrow {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.prose-text {
+  max-width: var(--prose-max);
+  color: var(--ink-muted);
+}
+.text-link {
+  color: var(--link);
+  font-weight: 500;
+  text-underline-offset: 3px;
+}
+.text-link:hover {
+  text-decoration: underline;
+}
+.font-display {
+  font-family: var(--font-display);
 }

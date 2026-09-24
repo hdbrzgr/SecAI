@@ -1,3 +1,4 @@
+"use client";
 // SecAI — Copyright (C) 2026 hdbrzgr. AGPL-3.0 with an attribution term; see NOTICE.
 import * as React from "react";
 import { ICONS, type IconName } from "./icons.gen";

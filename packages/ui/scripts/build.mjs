@@ -1,7 +1,7 @@
 // Builds the SecAI design system:
 //   src/icons.gen.ts            Lucide icon data used by <Icon>
 //   dist/design-system/project  the files published to the Claude Design system artifact
-//   dist/tokens.css             tokens as CSS custom properties, for the web app
+//   src/tokens.css, src/fonts   tokens as CSS custom properties and font files, for the web app
 import { build } from "esbuild";
 import { execFileSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
@@ -9,15 +9,22 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const lucide = join(root, "node_modules/lucide-static/icons");
+// Packages may be hoisted to the workspace root's node_modules.
+function pkgDir(name) {
+  for (let dir = root; ; dir = dirname(dir)) {
+    const candidate = join(dir, "node_modules", name);
+    if (existsSync(candidate)) return candidate;
+    if (dirname(dir) === dir) throw new Error(`Cannot find package ${name}`);
+  }
+}
+const lucide = join(pkgDir("lucide-static"), "icons");
 const out = join(root, "dist/design-system/project");
 
-// Icons the components draw. Asset-gallery icons are listed in design-system/icons.json.
+// <Icon> can draw every icon in the asset gallery (design-system/icons.json) plus these.
+const EXTRA_ICONS = ["ban", "check", "chevron-right", "loader-circle", "plus"];
 const COMPONENT_ICONS = [
-  "ban", "check", "chevron-right", "circle-check", "circle-x", "clock", "copy", "globe",
-  "info", "loader-circle", "octagon-alert", "scan-search", "shield-check", "triangle-alert",
-  "file-code", "folder-git-2", "bug", "lock", "external-link", "refresh-cw", "plus",
-];
+  ...new Set([...JSON.parse(readFileSync(join(root, "design-system/icons.json"), "utf8")), ...EXTRA_ICONS]),
+].sort();
 
 function parseIcon(name) {
   const svg = readFileSync(join(lucide, `${name}.svg`), "utf8");
@@ -66,6 +73,7 @@ const result = await build({
   define: { "process.env.NODE_ENV": '"production"' },
   plugins: [reactGlobal],
   legalComments: "none",
+  logOverride: { "module level directives cause errors when bundled": "silent" },
 });
 let js = result.outputFiles[0].text;
 if (/<\/script|<!--/i.test(js)) throw new Error("bundle contains </script or <!--");
@@ -75,7 +83,7 @@ writeFileSync(join(out, "components/bundle.js"), js);
 
 // 3. Stylesheet and types
 cpSync(join(root, "src/styles.css"), join(out, "components/bundle.css"));
-execFileSync(join(root, "node_modules/.bin/tsc"), [
+execFileSync(process.execPath, [join(pkgDir("typescript"), "bin/tsc"),
   "--declaration", "--emitDeclarationOnly", "--strict", "--jsx", "react", "--esModuleInterop",
   "--skipLibCheck", "--target", "es2020", "--moduleResolution", "bundler", "--module", "esnext",
   "--outDir", join(root, "dist/types"), join(root, "src/components.tsx"),
@@ -99,7 +107,7 @@ mkdirSync(join(out, "fonts"), { recursive: true });
 for (const f of tokens.type.fonts) {
   const file = f.file.replace(/^fonts\//, "");
   const pkg = file.replace(/-latin-.*$/, "");
-  cpSync(join(root, "node_modules/@fontsource", pkg, "files", file), join(out, "fonts", file));
+  cpSync(join(pkgDir(`@fontsource/${pkg}`), "files", file), join(out, "fonts", file));
 }
 
 // 6. Gallery icons to upload as assets
@@ -144,8 +152,10 @@ ${themeBlock("dark")}
 ${lengths.concat(families).join("\n")}
 }
 `;
-writeFileSync(join(root, "dist/tokens.css"), css);
-cpSync(join(out, "fonts"), join(root, "dist/fonts"), { recursive: true });
+// Committed next to the components so apps import "@secai/ui/tokens.css" without a build step.
+writeFileSync(join(root, "src/tokens.css"), css);
+rmSync(join(root, "src/fonts"), { recursive: true, force: true });
+cpSync(join(out, "fonts"), join(root, "src/fonts"), { recursive: true });
 
 const count = (d) => readdirSync(d, { recursive: true }).length;
 console.log(`Built ${components.length} components; ${count(out)} entries in dist/design-system/project`);

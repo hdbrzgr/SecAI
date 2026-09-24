@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 // Where the Next.js server reaches the FastAPI backend. Rewrites are resolved at build time,
@@ -21,6 +22,9 @@ const csp = [
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // Monorepo: trace files from the repository root so packages/ui ships in the standalone build.
+  outputFileTracingRoot: path.join(__dirname, "../.."),
+  transpilePackages: ["@secai/ui"],
   poweredByHeader: false,
   async rewrites() {
     return [{ source: "/api/:path*", destination: `${apiUrl}/:path*` }];

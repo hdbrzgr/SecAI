@@ -4,6 +4,7 @@ Open-source, self-hostable, AI-powered security scanning. Users verify they own 
 
 - **Plan & architecture:** [docs/PLAN.md](docs/PLAN.md)
 - **Roadmap / TODO:** [docs/TODO.md](docs/TODO.md)
+- **Design system:** [packages/ui](packages/ui) · [in Claude Design](https://claude.ai/artifact/Eu7M6wukvHRi69oLHyuLSE)
 - **Stack decisions:** [docs/STACK.md](docs/STACK.md)
 
 ## Quick start (self-hosted)
@@ -28,7 +29,8 @@ For a real deployment, put a TLS reverse proxy (Caddy, Traefik, nginx) in front 
 |---|---|---|
 | API (FastAPI) | `apps/api` | `uv sync` · `uv run uvicorn app.main:app --reload` · `uv run pytest` · `uv run ruff check .` · `uv run alembic upgrade head` |
 | Worker (ARQ) | `apps/api/app/worker.py` | `uv run arq app.worker.WorkerSettings` |
-| Web (Next.js) | `apps/web` | `npm install` · `npm run dev` · `npm run lint` · `npm run typecheck` |
+| Web (Next.js) | `apps/web` | from the repo root: `npm install` · `npm run dev -w secai-web` · `npm run lint -w secai-web` |
+| Design system | `packages/ui` | `npm run build -w @secai/ui` (regenerates `src/tokens.css`, fonts, the Claude Design files) · `npm run check -w @secai/ui` |
 
 The API needs Postgres and Redis. The simplest way to get them locally is `docker compose up -d postgres redis`, then publish their ports or use local installs. See `apps/api/app/core/config.py` for every `SECAI_*` setting.
 
