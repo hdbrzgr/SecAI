@@ -44,8 +44,9 @@ Add a website, prove you own it (DNS TXT record, a file at `/.well-known/secai-v
 | TLS | Certificate trust and hostname, expiry, TLS 1.0/1.1 support |
 | Exposed files | `.git`, `.env`, `.svn`, `.DS_Store`, phpinfo, server-status, config backups, AWS credentials (confirmed by content, contents of secrets never stored) |
 | Nuclei | ProjectDiscovery's HTTP templates; `dos`, `fuzz`, `bruteforce` and `intrusive` templates are excluded; rate limited |
+| OWASP ZAP | Spiders the site (5 minutes max) and runs ZAP's passive rules: CSRF tokens, SRI, mixed content, cross-domain scripts, information leaks and more. Baseline only: no attack payloads |
 
-Findings are normalized, deduplicated and graded A–F. OWASP ZAP and AI-written explanations are next on the roadmap.
+Findings are normalized, deduplicated and graded A–F. ZAP runs on its own Docker network with the worker, so it can't reach the database or Redis. AI-written explanations are next on the roadmap.
 
 **Scanner safety.** Every connection to a user's site goes through a guard that resolves the hostname, refuses private, loopback, link-local and cloud-metadata addresses, pins the connection to the checked address and re-checks every redirect. `SECAI_SCAN_ALLOW_PRIVATE=true` lifts this for local development only; the API refuses to start with it in production.
 

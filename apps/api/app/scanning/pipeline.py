@@ -15,12 +15,13 @@ from app.scanning.scanners.exposure import ExposureScanner
 from app.scanning.scanners.headers import HeadersScanner
 from app.scanning.scanners.nuclei import NucleiScanner
 from app.scanning.scanners.tls import TlsScanner
+from app.scanning.scanners.zap import ZapScanner
 
 log = logging.getLogger(__name__)
 
 
 def default_scanners() -> list[Scanner]:
-    return [HeadersScanner(), TlsScanner(), ExposureScanner(), NucleiScanner()]
+    return [HeadersScanner(), TlsScanner(), ExposureScanner(), NucleiScanner(), ZapScanner()]
 
 
 async def run_scan(

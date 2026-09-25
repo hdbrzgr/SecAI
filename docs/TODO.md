@@ -33,7 +33,9 @@ Legend: `[ ]` todo · `[x]` done · **(MVP)** = required for private beta
 - [x] **(MVP)** Scanner: TLS certificate trust, expiry, legacy TLS 1.0/1.1 (Python ssl)
 - [ ] **(MVP)** Scanner: httpx tech fingerprint
 - [x] **(MVP)** Scanner: Nuclei in the worker image (http templates; dos, fuzz, brute-force and intrusive tags excluded; rate limited)
-- [ ] **(MVP)** Scanner: OWASP ZAP baseline (passive), then active scan for paid plans
+- [x] **(MVP)** Scanner: OWASP ZAP baseline (spider + passive rules) via its API, one session at a time, isolated network
+- [ ] ZAP active scan as an opt-in "full scan" profile (safe policy, no DoS)
+- [ ] ZAP AJAX spider for single-page apps
 - [x] Scanner: exposed files (`.git`, `.env`, `.svn`, backups, phpinfo, server-status, AWS credentials) with content checks; secrets never stored
 - [ ] Scanner: top-ports check (naabu)
 - [x] **(MVP)** Parsers → normalized findings; dedup by fingerprint; score and A–F grade

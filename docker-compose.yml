@@ -66,9 +66,42 @@ services:
       context: ./apps/api
       target: worker
     restart: unless-stopped
-    environment: *api-env
+    environment:
+      <<: *api-env
+      SECAI_ZAP_URL: http://zap:8090
+      SECAI_ZAP_API_KEY: ${SECAI_ZAP_API_KEY:?set SECAI_ZAP_API_KEY in .env}
+    networks: [default, scanners]
     depends_on:
       api: { condition: service_healthy }
+      zap: { condition: service_healthy }
+
+  # OWASP ZAP in daemon mode, driven by the worker over its API. It sits on its own network
+  # with the worker only, so it can't reach Postgres or Redis, and its port isn't published.
+  zap:
+    image: zaproxy/zap-stable:2.17.0
+    restart: unless-stopped
+    command:
+      - zap.sh
+      - -daemon
+      - -host
+      - 0.0.0.0
+      - -port
+      - "8090"
+      - -config
+      - api.key=${SECAI_ZAP_API_KEY:?set SECAI_ZAP_API_KEY in .env}
+      - -config
+      - api.addrs.addr.name=.*
+      - -config
+      - api.addrs.addr.regex=true
+    networks: [scanners]
+    mem_limit: 2g
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf -H \"X-ZAP-API-Key: $$SECAI_ZAP_API_KEY\" http://localhost:8090/JSON/core/view/version/ >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    environment:
+      SECAI_ZAP_API_KEY: ${SECAI_ZAP_API_KEY:?set SECAI_ZAP_API_KEY in .env}
 
   web:
     build:
@@ -81,6 +114,10 @@ services:
       - "${SECAI_WEB_PORT:-3000}:3000"
     depends_on:
       api: { condition: service_healthy }
+
+networks:
+  default:
+  scanners:
 
 volumes:
   postgres-data:

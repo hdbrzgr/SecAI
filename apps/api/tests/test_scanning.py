@@ -8,6 +8,7 @@ from app.core.config import get_settings
 from app.models import Severity
 from app.scanning.normalize import RawFinding, dedupe, grade
 from app.scanning.pipeline import run_scan
+from app.scanning.scanners.base import ScanContext
 from app.scanning.scanners.exposure import ExposureScanner
 from app.scanning.scanners.headers import HeadersScanner
 from app.scanning.scanners.nuclei import parse_line
@@ -272,3 +273,67 @@ async def test_unverified_target_scan_job_fails_safely(app, client, site):
     async with app.state.sessionmaker() as db:
         s = await db.get(Scan, scan_id)
         assert s.status == ScanStatus.failed
+
+
+def test_zap_alerts_are_grouped_and_overlaps_dropped():
+    from app.scanning.scanners.zap import aggregate
+
+    origin = "https://example.com/"
+    alerts = [
+        {"pluginId": "10038", "alert": "CSP not set", "risk": "Medium", "url": origin},
+        {
+            "pluginId": "10098",
+            "alert": "Cross-Domain Misconfiguration",
+            "risk": "Medium",
+            "confidence": "Medium",
+            "cweid": "264",
+            "url": f"{origin}a",
+            "evidence": "Access-Control-Allow-Origin: *",
+            "solution": "Restrict CORS",
+            "reference": "https://example.org/cors\nnot a url",
+        },
+        {
+            "pluginId": "10098",
+            "alert": "Cross-Domain Misconfiguration",
+            "risk": "Medium",
+            "url": f"{origin}b",
+        },
+        {
+            "pluginId": "10202",
+            "alert": "Absence of Anti-CSRF Tokens",
+            "risk": "Medium",
+            "url": origin,
+            "param": "login",
+        },
+        {
+            "pluginId": "10202",
+            "alert": "Absence of Anti-CSRF Tokens",
+            "risk": "Medium",
+            "url": origin,
+            "param": "search",
+        },
+        {
+            "pluginId": "10027",
+            "alert": "Suspicious comment",
+            "risk": "Informational",
+            "confidence": "False Positive",
+            "url": origin,
+        },
+        {"pluginId": "10096", "alert": "Timestamp", "risk": "Low", "url": "https://other.example/"},
+    ]
+    out = {(f.rule_id, f.param): f for f in aggregate(alerts, origin)}
+    assert set(out) == {("zap.10098", None), ("zap.10202", "login"), ("zap.10202", "search")}
+    cors = out[("zap.10098", None)]
+    assert cors.url == origin
+    assert cors.cwe == "CWE-264"
+    assert cors.references == ["https://example.org/cors"]
+    assert f"{origin}a" in cors.evidence and f"{origin}b" in cors.evidence
+    assert cors.raw["instances"] == 2
+
+
+async def test_zap_is_skipped_when_not_configured():
+    from app.scanning.scanners.base import ScannerUnavailable
+    from app.scanning.scanners.zap import ZapScanner
+
+    with pytest.raises(ScannerUnavailable):
+        await ZapScanner().run(ScanContext(url="https://example.com/", hostname="example.com"))

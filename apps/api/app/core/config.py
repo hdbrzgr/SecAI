@@ -44,6 +44,10 @@ class Settings(BaseSettings):
     nuclei_path: str = "nuclei"
     nuclei_templates: str | None = None
     scan_tool_timeout_seconds: int = 15 * 60
+    # OWASP ZAP daemon (the "zap" service in docker-compose). Unset = ZAP is skipped.
+    zap_url: str | None = None
+    zap_api_key: str | None = None
+    zap_spider_minutes: int = 5
 
     @property
     def cookie_secure(self) -> bool:
