@@ -13,7 +13,7 @@ COPY . .
 
 FROM projectdiscovery/nuclei:${NUCLEI_VERSION} AS nuclei
 # Templates are fetched at build time; rebuild the image to update them.
-RUN nuclei -update-templates -ud /opt/nuclei-templates -duc -silent \
+RUN nuclei -update-templates -ud /opt/nuclei-templates \
     && test -d /opt/nuclei-templates/http
 
 FROM python:3.13-slim AS api
