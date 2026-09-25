@@ -11,15 +11,16 @@ Legend: `[ ]` todo · `[x]` done · **(MVP)** = required for private beta
 - [x] **(MVP)** Self-hosted auth: register/login/logout, argon2id, server-side sessions, CSRF/Origin check, login rate limit
 - [x] **(MVP)** TOTP two-factor auth (secrets encrypted at rest)
 - [x] **(MVP)** Workspace (org) model created on sign-up
-- [ ] Email verification + password reset (needs SMTP)
+- [x] Email verification + password reset (needs SMTP); change password
 - [ ] MFA recovery codes, passkeys (WebAuthn), GitHub login, generic OIDC
-- [ ] Worker cron job that deletes expired sessions
+- [x] Worker cron job that deletes expired sessions and tokens, and fails stuck scans
 - [x] **(MVP)** DB schema + migrations (Alembic): users, sessions, organizations, memberships, targets, scans, findings
 - [ ] Remaining tables as their phases need them: scan_steps, finding_groups, ai_enrichments, usage/quotas
 - [ ] **(MVP)** Unified `Finding` schema (Pydantic, exported as JSON Schema → TS types)
 - [x] Settings: env config (`SECAI_*`), refuses to start in production with a weak secret or plain-http origin
 - [ ] Optional Sentry / OpenTelemetry
-- [ ] Trusted-proxy config so per-IP rate limits can't be bypassed with a spoofed `X-Forwarded-For` when the API sits behind extra proxies
+- [x] Documented proxy requirements so per-IP rate limits can't be bypassed (Caddy profile overwrites `X-Forwarded-For`)
+- [ ] Admin can create or invite accounts directly (today: open sign-ups briefly)
 
 ## Phase 1 — Website pentest (DAST) MVP
 - [x] **(MVP)** Add target (URL) + normalize/validate (domains only; IDN support; one per workspace)
@@ -59,12 +60,12 @@ Legend: `[ ]` todo · `[x]` done · **(MVP)** = required for private beta
 - [ ] Eval set: sample findings with expected verdicts to regression-test prompts
 
 ## Phase 3 — Self-host release
-- [ ] **(MVP)** Admin-configurable quotas + enforcement in API
-- [ ] **(MVP)** Usage metering (scans, targets, AI tokens)
-- [ ] **(MVP)** Admin panel: users, workspaces, domain blocklist, kill switch
-- [ ] **(MVP)** Transactional emails via SMTP (verify email, scan finished)
-- [ ] **(MVP)** Install guide, upgrade guide, backup guide, hardening checklist
-- [ ] **(MVP)** ToS / Acceptable Use templates + authorization attestation
+- [x] **(MVP)** Admin-configurable limits (scans/day, websites per workspace, sign-ups) enforced in the API
+- [x] **(MVP)** Usage overview (users, websites, scans, AI tokens) in the admin panel
+- [x] **(MVP)** Admin panel: users, domain blocklist, kill switch, settings, audit log
+- [x] **(MVP)** Transactional emails via SMTP (verify email, password reset, scan finished)
+- [x] **(MVP)** Install guide, upgrade guide, backup guide, hardening checklist; optional Caddy HTTPS profile
+- [x] **(MVP)** ToS / Acceptable Use templates + authorization attestation (recorded in the audit log)
 - [ ] Optional billing module: Stripe trial + subscriptions mapped to quotas (off by default)
 - [ ] **🚀 v0.1 public release**
 

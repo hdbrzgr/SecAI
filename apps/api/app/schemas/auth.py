@@ -33,6 +33,8 @@ class UserOut(BaseModel):
     name: str | None
     is_superuser: bool
     mfa_enabled: bool
+    email_verified: bool
+    email_verification_required: bool
 
 
 class LoginOut(BaseModel):
@@ -52,3 +54,31 @@ class MfaSetupOut(BaseModel):
 class MfaDisableIn(BaseModel):
     password: str = Field(max_length=128)
     code: str = Field(min_length=6, max_length=8)
+
+
+class TokenIn(BaseModel):
+    token: str = Field(min_length=10, max_length=200)
+
+
+class ForgotPasswordIn(BaseModel):
+    email: EmailStr
+
+    @field_validator("email")
+    @classmethod
+    def _normalize(cls, v: str) -> str:
+        return v.strip().lower()
+
+
+class ResetPasswordIn(BaseModel):
+    token: str = Field(min_length=10, max_length=200)
+    password: str = Field(max_length=128)
+
+
+class ChangePasswordIn(BaseModel):
+    current_password: str = Field(max_length=128)
+    new_password: str = Field(max_length=128)
+
+
+class PublicConfig(BaseModel):
+    registration_open: bool
+    email_enabled: bool

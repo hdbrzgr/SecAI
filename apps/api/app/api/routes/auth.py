@@ -9,6 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import AuthContext, client_ip, get_auth, get_pending_auth, get_redis
 from app.core import ratelimit
 from app.core.config import Settings, get_settings
+from app.core.instance import audit, get_instance_settings
+from app.core.mail import smtp_configured
 from app.core.security import (
     decrypt_secret,
     encrypt_secret,
@@ -23,6 +25,7 @@ from app.core.security import (
 )
 from app.db.session import get_db
 from app.models import Membership, Organization, OrgRole, User, UserSession
+from app.scanning.queue import Enqueue, get_enqueue
 from app.schemas.auth import (
     LoginIn,
     LoginOut,
@@ -93,6 +96,7 @@ async def register(
     db: AsyncSession = Depends(get_db),
     redis: Redis = Depends(get_redis),
     settings: Settings = Depends(get_settings),
+    enqueue: Enqueue = Depends(get_enqueue),
 ) -> User:
     if not await ratelimit.hit(
         redis, f"register:ip:{client_ip(request)}", 10, settings.login_rate_limit_window_seconds
@@ -100,8 +104,9 @@ async def register(
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Too many attempts, try later")
 
     is_first_user = (await db.scalar(select(func.count()).select_from(User))) == 0
+    instance = await get_instance_settings(db, settings)
     # The first account can always be created so a fresh instance gets its admin.
-    if not settings.allow_registration and not is_first_user:
+    if not instance.registration_open and not is_first_user:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Registration is disabled")
     if len(body.password) < settings.password_min_length:
         raise HTTPException(
@@ -124,7 +129,19 @@ async def register(
         # Deliberately vague to avoid confirming which emails have accounts.
         raise HTTPException(status.HTTP_409_CONFLICT, "Could not create account") from None
     db.add(Membership(org_id=org.id, user_id=user.id, role=OrgRole.owner))
+    audit(
+        db,
+        "user.registered",
+        actor_id=user.id,
+        org_id=org.id,
+        subject=user.email,
+        ip=client_ip(request),
+    )
     await _start_session(db, response, request, settings, user, mfa_verified=True)
+    if smtp_configured() and not user.is_superuser:
+        from app.api.routes.account import send_verification
+
+        await send_verification(db, user, settings, enqueue)
     await db.commit()
     return user
 

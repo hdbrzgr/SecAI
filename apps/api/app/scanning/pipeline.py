@@ -8,8 +8,11 @@ from datetime import UTC, datetime
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.ai.analysis import analyze
+from app.core import mail
+from app.core.config import get_settings
+from app.core.instance import blocked_by, get_instance_settings
 from app.core.netguard import TargetNotAllowed
-from app.models import Finding, Scan, ScanStatus, Target
+from app.models import Finding, Scan, ScanStatus, Target, User
 from app.scanning.normalize import RawFinding, dedupe, grade
 from app.scanning.scanners.base import ScanContext, Scanner, ScannerUnavailable
 from app.scanning.scanners.exposure import ExposureScanner
@@ -36,9 +39,16 @@ async def run_scan(
         if scan is None or scan.status != ScanStatus.queued:
             return
         target = await db.get(Target, scan.target_id) if scan.target_id else None
+        refusal = None
         if target is None or target.verified_at is None:
+            refusal = "The website is no longer verified"
+        elif await blocked_by(db, target.hostname):
+            refusal = "The website is blocked on this instance"
+        elif (await get_instance_settings(db, get_settings())).scanning_paused:
+            refusal = "Scanning was paused by the administrator before this scan started"
+        if refusal:
             scan.status = ScanStatus.failed
-            scan.error = "The website is no longer verified"
+            scan.error = refusal
             scan.finished_at = datetime.now(UTC)
             await db.commit()
             return
@@ -132,3 +142,40 @@ async def run_scan(
             scan.error = "No scanner could reach the website"
             scan.current_step = None
         await db.commit()
+        await notify_owner(db, scan, target)
+
+
+async def notify_owner(db: AsyncSession, scan: Scan, target: Target) -> None:
+    """Email whoever started the scan. Never raises: a mail problem mustn't fail the scan."""
+    if not mail.smtp_configured() or scan.created_by_id is None:
+        return
+    user = await db.get(User, scan.created_by_id)
+    if user is None or not user.is_active:
+        return
+    link = f"{get_settings().web_origin.rstrip('/')}/scans/{scan.id}"
+    if scan.status == ScanStatus.succeeded:
+        s = scan.summary
+        counts = s.get("counts", {})
+        found = ", ".join(
+            f"{counts[k]} {k}" for k in ("critical", "high", "medium", "low") if counts.get(k)
+        )
+        paragraphs = [
+            f"The scan of {target.hostname} finished with grade {s.get('grade')} "
+            f"({s.get('score')}/100).",
+            f"Findings: {found}." if found else "No problems above informational level were found.",
+        ]
+        ai = s.get("ai") or {}
+        if ai.get("status") == "ok" and ai.get("executive_summary"):
+            paragraphs.append(ai["executive_summary"])
+        subject = f"Scan finished: {target.hostname}, grade {s.get('grade')}"
+    else:
+        paragraphs = [
+            f"The scan of {target.hostname} couldn't finish: {scan.error or 'unknown error'}."
+        ]
+        subject = f"Scan failed: {target.hostname}"
+    try:
+        await mail.send(
+            mail.build_message(user.email, subject, paragraphs, ("Open the report", link))
+        )
+    except Exception:
+        log.exception("Couldn't email scan %s result", scan.id)

@@ -10,6 +10,7 @@ from app.api.deps import client_ip, get_current_user, get_redis
 from app.api.org import get_current_org
 from app.core import ratelimit
 from app.core.config import Settings, get_settings
+from app.core.instance import audit, blocked_by, get_instance_settings
 from app.core.netguard import TargetNotAllowed, resolve
 from app.db.session import get_db
 from app.models import Organization, Scan, ScanKind, ScanStatus, Target, User
@@ -75,14 +76,32 @@ async def list_targets(
 @router.post("", response_model=TargetOut, status_code=status.HTTP_201_CREATED)
 async def add_target(
     body: TargetIn,
+    request: Request,
+    user: User = Depends(get_current_user),
     org: Organization = Depends(get_current_org),
     db: AsyncSession = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ) -> TargetOut:
+    if user.email_verification_required:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN, "Confirm your email address before adding websites"
+        )
     try:
         url, hostname = normalize_url(body.url)
     except InvalidTarget as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from None
+    if await blocked_by(db, hostname):
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            f"{hostname} can't be added on this instance. Contact the administrator.",
+        )
+    instance = await get_instance_settings(db, settings)
+    count = await db.scalar(select(func.count()).select_from(Target).where(Target.org_id == org.id))
+    if (count or 0) >= instance.max_targets_per_org:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            f"Your workspace has reached its limit of {instance.max_targets_per_org} websites",
+        )
     try:
         await resolve(hostname, 443)
     except TargetNotAllowed as exc:
@@ -95,6 +114,9 @@ async def add_target(
         org_id=org.id, url=url, hostname=hostname, verification_token=new_verification_token()
     )
     db.add(target)
+    audit(
+        db, "target.added", actor_id=user.id, org_id=org.id, subject=hostname, ip=client_ip(request)
+    )
     try:
         await db.commit()
     except IntegrityError:
@@ -118,10 +140,20 @@ async def get_target(
 @router.delete("/{target_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_target(
     target_id: uuid.UUID,
+    request: Request,
+    user: User = Depends(get_current_user),
     org: Organization = Depends(get_current_org),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
     target = await _get_target(db, org, target_id)
+    audit(
+        db,
+        "target.deleted",
+        actor_id=user.id,
+        org_id=org.id,
+        subject=target.hostname,
+        ip=client_ip(request),
+    )
     await db.delete(target)
     await db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -131,12 +163,16 @@ async def delete_target(
 async def verify_target(
     target_id: uuid.UUID,
     body: VerifyIn,
+    request: Request,
+    user: User = Depends(get_current_user),
     org: Organization = Depends(get_current_org),
     db: AsyncSession = Depends(get_db),
     redis=Depends(get_redis),
     settings: Settings = Depends(get_settings),
 ) -> TargetOut:
     target = await _get_target(db, org, target_id)
+    if await blocked_by(db, target.hostname):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "This website is blocked on this instance")
     # Each check makes outbound requests, so keep it from being used as a request cannon.
     if not await ratelimit.hit(redis, f"verify:target:{target.id}", 20, 60 * 60):
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Too many checks, try again later")
@@ -146,6 +182,15 @@ async def verify_target(
     if ok:
         target.verified_at = now
         target.verification_method = body.method
+        audit(
+            db,
+            "target.verified",
+            actor_id=user.id,
+            org_id=org.id,
+            subject=target.hostname,
+            ip=client_ip(request),
+            method=body.method.value,
+        )
     await db.commit()
     if not ok:
         what = {
@@ -192,6 +237,15 @@ async def start_scan(
     enqueue: Enqueue = Depends(get_enqueue),
 ) -> ScanOut:
     target = await _get_target(db, org, target_id)
+    instance = await get_instance_settings(db, settings)
+    if instance.scanning_paused:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "Scanning is paused on this instance"
+            + (f": {instance.scanning_paused_reason}" if instance.scanning_paused_reason else ""),
+        )
+    if await blocked_by(db, target.hostname):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "This website is blocked on this instance")
     if not body.authorized:
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -216,10 +270,10 @@ async def start_scan(
         .select_from(Scan)
         .where(Scan.org_id == org.id, Scan.created_at >= since)
     )
-    if (today or 0) >= settings.scans_per_day_per_org:
+    if (today or 0) >= instance.scans_per_day_per_org:
         raise HTTPException(
             status.HTTP_429_TOO_MANY_REQUESTS,
-            f"Your workspace has used its {settings.scans_per_day_per_org} scans "
+            f"Your workspace has used its {instance.scans_per_day_per_org} scans "
             "for the last 24 hours",
         )
 
@@ -235,6 +289,18 @@ async def start_scan(
         attested_ip=client_ip(request),
     )
     db.add(scan)
+    await db.flush()
+    # The attestation, kept independently of the scan so it survives the scan's deletion.
+    audit(
+        db,
+        "scan.started",
+        actor_id=user.id,
+        org_id=org.id,
+        subject=target.hostname,
+        ip=scan.attested_ip,
+        scan_id=str(scan.id),
+        authorized=True,
+    )
     await db.commit()
     await enqueue("run_scan", str(scan.id))
     out = ScanOut.model_validate(scan)

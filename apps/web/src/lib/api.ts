@@ -13,7 +13,11 @@ export type User = {
   name: string | null;
   is_superuser: boolean;
   mfa_enabled: boolean;
+  email_verified: boolean;
+  email_verification_required: boolean;
 };
+
+export type PublicConfig = { registration_open: boolean; email_enabled: boolean };
 
 export type LoginResult = { mfa_required: boolean; user: User | null };
 
@@ -128,3 +132,53 @@ export function formatDate(iso: string | null): string {
   if (!iso) return "";
   return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }
+
+export type AdminOverview = {
+  users: number;
+  active_users: number;
+  workspaces: number;
+  websites: number;
+  verified_websites: number;
+  scans_total: number;
+  scans_last_24h: number;
+  scans_running: number;
+  ai_tokens_last_30d: number;
+  scanning_paused: boolean;
+  smtp_configured: boolean;
+  ai_configured: boolean;
+  zap_configured: boolean;
+};
+
+export type AdminUser = {
+  id: string;
+  email: string;
+  name: string | null;
+  is_active: boolean;
+  is_superuser: boolean;
+  mfa_enabled: boolean;
+  email_verified: boolean;
+  created_at: string;
+  websites: number;
+  scans: number;
+};
+
+export type InstanceSettings = {
+  registration_open: boolean;
+  scans_per_day_per_org: number;
+  max_targets_per_org: number;
+  scanning_paused: boolean;
+  scanning_paused_reason: string | null;
+  updated_at: string;
+};
+
+export type BlockedDomain = { id: string; domain: string; reason: string | null; created_at: string };
+
+export type AuditEvent = {
+  id: string;
+  created_at: string;
+  actor_email: string | null;
+  action: string;
+  subject: string | null;
+  ip: string | null;
+  details: Record<string, unknown>;
+};

@@ -1,8 +1,8 @@
 # SecAI — self-hosted stack. Quick start:
 #   cp .env.example .env   # then set SECAI_SECRET_KEY and POSTGRES_PASSWORD
 #   docker compose up -d --build
-# The web app is served on http://localhost:3000. Put a TLS reverse proxy (Caddy, Traefik,
-# nginx) in front of it for anything other than local use, and set SECAI_WEB_ORIGIN to its URL.
+# The web app is served on http://localhost:3000. For a real deployment use HTTPS:
+#   docker compose --profile https up -d --build   (Caddy + Let's Encrypt, see docs/INSTALL.md)
 
 x-api-env: &api-env
   SECAI_ENV: ${SECAI_ENV:-production}
@@ -11,6 +11,14 @@ x-api-env: &api-env
   SECAI_ALLOW_REGISTRATION: ${SECAI_ALLOW_REGISTRATION:-true}
   SECAI_SCANS_PER_DAY_PER_ORG: ${SECAI_SCANS_PER_DAY_PER_ORG:-20}
   SECAI_VERIFICATION_MAX_AGE_DAYS: ${SECAI_VERIFICATION_MAX_AGE_DAYS:-90}
+  SECAI_MAX_TARGETS_PER_ORG: ${SECAI_MAX_TARGETS_PER_ORG:-25}
+  SECAI_SMTP_HOST: ${SECAI_SMTP_HOST:-}
+  SECAI_SMTP_PORT: ${SECAI_SMTP_PORT:-587}
+  SECAI_SMTP_USERNAME: ${SECAI_SMTP_USERNAME:-}
+  SECAI_SMTP_PASSWORD: ${SECAI_SMTP_PASSWORD:-}
+  SECAI_SMTP_FROM: ${SECAI_SMTP_FROM:-SecAI <secai@localhost>}
+  SECAI_SMTP_SECURITY: ${SECAI_SMTP_SECURITY:-starttls}
+  SECAI_ANTHROPIC_API_KEY: ${SECAI_ANTHROPIC_API_KEY:-}
   SECAI_DATABASE_URL: postgresql+asyncpg://secai:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/secai
   SECAI_REDIS_URL: redis://redis:6379/0
 
@@ -71,7 +79,6 @@ services:
       SECAI_ZAP_URL: http://zap:8090
       SECAI_ZAP_API_KEY: ${SECAI_ZAP_API_KEY:?set SECAI_ZAP_API_KEY in .env}
       # Optional: AI analysis of findings with Claude.
-      SECAI_ANTHROPIC_API_KEY: ${SECAI_ANTHROPIC_API_KEY:-}
       SECAI_AI_MODEL: ${SECAI_AI_MODEL:-claude-opus-5}
       SECAI_AI_EFFORT: ${SECAI_AI_EFFORT:-high}
     networks: [default, scanners]
@@ -115,9 +122,28 @@ services:
         API_INTERNAL_URL: http://api:8000
     restart: unless-stopped
     ports:
-      - "${SECAI_WEB_PORT:-3000}:3000"
+      # Localhost only by default: reach it through Caddy (profile "https") or an SSH tunnel.
+      - "${SECAI_WEB_BIND:-127.0.0.1}:${SECAI_WEB_PORT:-3000}:3000"
     depends_on:
       api: { condition: service_healthy }
+
+  # Optional HTTPS with automatic certificates: docker compose --profile https up -d
+  caddy:
+    image: caddy:2
+    profiles: ["https"]
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      SECAI_DOMAIN: ${SECAI_DOMAIN:-localhost}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - web
 
 networks:
   default:
@@ -126,3 +152,5 @@ networks:
 volumes:
   postgres-data:
   redis-data:
+  caddy-data:
+  caddy-config:

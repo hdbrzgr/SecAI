@@ -1,0 +1,8 @@
+# HTTPS in front of SecAI, with certificates from Let's Encrypt.
+# Used by `docker compose --profile https up -d`. Set SECAI_DOMAIN in .env.
+{$SECAI_DOMAIN} {
+	encode zstd gzip
+	# Caddy replaces any X-Forwarded-For sent by the client, so the per-IP rate limits
+	# in the API see the real visitor address.
+	reverse_proxy web:3000
+}

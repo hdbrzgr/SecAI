@@ -136,6 +136,52 @@ export default function SecuritySettingsPage() {
         )}
       </Card>
 
+      <Card title="Password">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const form = new FormData(e.currentTarget);
+            const el = e.currentTarget;
+            run(async () => {
+              await api("/auth/password/change", {
+                body: {
+                  current_password: form.get("current_password"),
+                  new_password: form.get("new_password"),
+                },
+              });
+              el.reset();
+              setNotice("Password changed. Other devices were signed out.");
+            });
+          }}
+          className="flex flex-col gap-4"
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TextField
+              label="Current password"
+              name="current_password"
+              type="password"
+              autoComplete="current-password"
+              required
+            />
+            <TextField
+              label="New password"
+              hint="At least 12 characters."
+              name="new_password"
+              type="password"
+              autoComplete="new-password"
+              minLength={12}
+              maxLength={128}
+              required
+            />
+          </div>
+          <div>
+            <Button type="submit" loading={busy}>
+              Change password
+            </Button>
+          </div>
+        </form>
+      </Card>
+
       <Card title="Sessions">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <p className="prose-text m-0">Sign out on every device, including this one.</p>

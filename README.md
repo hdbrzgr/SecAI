@@ -4,24 +4,31 @@ Open-source, self-hostable, AI-powered security scanning. Users verify they own 
 
 - **Plan & architecture:** [docs/PLAN.md](docs/PLAN.md)
 - **Roadmap / TODO:** [docs/TODO.md](docs/TODO.md)
+- **Install on a server:** [docs/INSTALL.md](docs/INSTALL.md) · [upgrade](docs/UPGRADE.md) · [backup](docs/BACKUP.md) · [hardening](docs/HARDENING.md) · [legal templates](docs/legal/)
 - **Design system:** [packages/ui](packages/ui) · [in Claude Design](https://claude.ai/artifact/Eu7M6wukvHRi69oLHyuLSE)
 - **Stack decisions:** [docs/STACK.md](docs/STACK.md)
 
 ## Quick start (self-hosted)
 
-Requirements: Docker with Compose.
+Requirements: Docker with Compose, and a server with 4 GB RAM for a real deployment.
 
 ```bash
 git clone https://github.com/hdbrzgr/SecAI.git && cd SecAI
 cp .env.example .env
-# Set SECAI_SECRET_KEY and POSTGRES_PASSWORD in .env
+# Set SECAI_SECRET_KEY, POSTGRES_PASSWORD and SECAI_ZAP_API_KEY in .env
 # (python3 -c "import secrets; print(secrets.token_urlsafe(48))")
 docker compose up -d --build
 ```
 
-Open http://localhost:3000 and create an account. **The first account becomes the instance admin.** Then set `SECAI_ALLOW_REGISTRATION=false` if you don't want public sign-ups.
+Open http://localhost:3000 and create an account. **The first account becomes the instance admin.**
 
-For a real deployment, put a TLS reverse proxy (Caddy, Traefik, nginx) in front of port 3000, set `SECAI_WEB_ORIGIN=https://your-domain` and `SECAI_ENV=production`.
+For a public server with HTTPS (Caddy and Let's Encrypt), email, and AI analysis, follow **[docs/INSTALL.md](docs/INSTALL.md)**: it's one `docker compose --profile https up -d --build` after setting your domain.
+
+## Running an instance
+
+- **Admin panel** (`/admin`, admins only): usage overview and service status, users (deactivate, make admin), sign-up and per-workspace limits, a switch that pauses all scanning, a domain blocklist, and an audit log of scans, ownership proofs, account security events and admin changes.
+- **Email** (optional SMTP): email confirmation before adding websites, password reset, and a "scan finished" email with the grade.
+- **Housekeeping**: the worker deletes expired sessions and tokens and fails scans left behind by a crashed worker, every 10 minutes.
 
 ## Development
 

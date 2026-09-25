@@ -29,6 +29,24 @@ class User(IdMixin, TimestampMixin, Base):
         back_populates="user", cascade="all, delete-orphan"
     )
 
+    @property
+    def email_verified(self) -> bool:
+        return self.email_verified_at is not None
+
+    @property
+    def email_verification_required(self) -> bool:
+        """True when this instance sends email and requires a verified address to add websites.
+        Instance admins are exempt so a misconfigured mail server can't lock them out."""
+        from app.core.config import get_settings
+
+        settings = get_settings()
+        return (
+            bool(settings.smtp_host)
+            and settings.require_email_verification
+            and not self.is_superuser
+            and self.email_verified_at is None
+        )
+
 
 class UserSession(IdMixin, Base):
     __tablename__ = "user_sessions"
@@ -46,3 +64,18 @@ class UserSession(IdMixin, Base):
     user_agent: Mapped[str | None] = mapped_column(String(512))
 
     user: Mapped[User] = relationship(back_populates="sessions")
+
+
+class ActionToken(IdMixin, Base):
+    """Single-use emailed token (verify email, reset password). Only its hash is stored."""
+
+    __tablename__ = "action_tokens"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    purpose: Mapped[str] = mapped_column(String(30))
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+    expires_at: Mapped[datetime]
+    used_at: Mapped[datetime | None]

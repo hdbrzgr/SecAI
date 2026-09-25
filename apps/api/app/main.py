@@ -9,7 +9,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
 from redis.asyncio import Redis
 
-from app.api.routes import auth, health, scans, targets
+from app.api.routes import account, admin, auth, health, scans, targets
 from app.core.config import get_settings
 
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
@@ -79,8 +79,10 @@ def create_app() -> FastAPI:
 
     app.include_router(health.router)
     app.include_router(auth.router)
+    app.include_router(account.router)
     app.include_router(targets.router)
     app.include_router(scans.router)
+    app.include_router(admin.router)
     return app
 
 

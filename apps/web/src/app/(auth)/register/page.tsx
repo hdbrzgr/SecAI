@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { Alert, Button, Card, TextField } from "@secai/ui";
 import { api, ApiError } from "@/lib/api";
+import { usePublicConfig } from "@/lib/usePublicConfig";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const config = usePublicConfig();
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -30,6 +32,21 @@ export default function RegisterPage() {
     } finally {
       setBusy(false);
     }
+  }
+
+  if (config && !config.registration_open) {
+    return (
+      <Card title="Create your account">
+        <Alert tone="info" title="Sign-ups are closed on this instance">
+          Contact the administrator of this SecAI instance if you need an account.
+        </Alert>
+        <p className="mt-5 mb-0 text-[14px] text-ink-muted">
+          <Link href="/login" className="text-link">
+            Sign in
+          </Link>
+        </p>
+      </Card>
+    );
   }
 
   return (

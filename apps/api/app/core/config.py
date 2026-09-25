@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     # Refused in production, where it would turn the scanner into an SSRF tool.
     scan_allow_private: bool = False
     scans_per_day_per_org: int = 20
+    max_targets_per_org: int = 25
     # Ownership must have been proven within this many days before each scan.
     verification_max_age_days: int = 90
     nuclei_path: str = "nuclei"
@@ -48,6 +49,17 @@ class Settings(BaseSettings):
     zap_url: str | None = None
     zap_api_key: str | None = None
     zap_spider_minutes: int = 5
+
+    # Outgoing email (verification, password reset, scan finished). Unset host = no email.
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_from: str = "SecAI <secai@localhost>"
+    # "starttls" (port 587), "tls" (implicit TLS, port 465) or "none" (local relay only).
+    smtp_security: Literal["starttls", "tls", "none"] = "starttls"
+    # When SMTP is configured, new accounts must verify their email before adding websites.
+    require_email_verification: bool = True
 
     # AI analysis with Claude. Enabled when an Anthropic API key is available
     # (SECAI_ANTHROPIC_API_KEY, or the SDK's usual ANTHROPIC_API_KEY).
