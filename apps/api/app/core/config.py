@@ -49,6 +49,21 @@ class Settings(BaseSettings):
     zap_api_key: str | None = None
     zap_spider_minutes: int = 5
 
+    # AI analysis with Claude. Enabled when an Anthropic API key is available
+    # (SECAI_ANTHROPIC_API_KEY, or the SDK's usual ANTHROPIC_API_KEY).
+    anthropic_api_key: str | None = None
+    ai_model: str = "claude-opus-5"
+    ai_effort: Literal["low", "medium", "high", "xhigh", "max"] = "high"
+    # Server-side refusal fallbacks (Claude API only; turn off behind proxies that reject it).
+    ai_fallbacks: bool = True
+    ai_max_findings: int = 60
+
+    @property
+    def ai_api_key(self) -> str | None:
+        import os
+
+        return self.anthropic_api_key or os.environ.get("ANTHROPIC_API_KEY") or None
+
     @property
     def cookie_secure(self) -> bool:
         return self.web_origin.startswith("https://")

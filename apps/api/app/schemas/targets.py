@@ -61,6 +61,8 @@ class FindingOut(BaseModel):
     description: str | None
     recommendation: str | None
     references: list[str]
+    fingerprint: str
+    ai: dict[str, Any] | None
 
 
 class ScanOut(ScanBrief):

@@ -46,7 +46,23 @@ Add a website, prove you own it (DNS TXT record, a file at `/.well-known/secai-v
 | Nuclei | ProjectDiscovery's HTTP templates; `dos`, `fuzz`, `bruteforce` and `intrusive` templates are excluded; rate limited |
 | OWASP ZAP | Spiders the site (5 minutes max) and runs ZAP's passive rules: CSRF tokens, SRI, mixed content, cross-domain scripts, information leaks and more. Baseline only: no attack payloads |
 
-Findings are normalized, deduplicated and graded A–F. ZAP runs on its own Docker network with the worker, so it can't reach the database or Redis. AI-written explanations are next on the roadmap.
+Findings are normalized, deduplicated and graded A–F. ZAP runs on its own Docker network with the worker, so it can't reach the database or Redis.
+
+## AI analysis (optional)
+
+Set `SECAI_ANTHROPIC_API_KEY` in `.env` and the worker sends each scan's findings to Claude (`claude-opus-5` by default; `SECAI_AI_MODEL` and `SECAI_AI_EFFORT` change it). The report then shows:
+
+- a short summary and the findings to fix first,
+- per finding: whether it's likely real, needs review or is likely a false positive, a severity for this site, a plain explanation, fix steps for the software the site runs, and a config or code example.
+
+How it's kept safe:
+
+- **Redaction:** secrets, tokens, keys and long opaque strings are stripped before anything leaves your instance. Contents of exposed secret files are never collected in the first place.
+- **Untrusted input:** scanner output comes from the scanned site, so it's sent as data inside `<scan_data>`, the model is told not to follow instructions in it, and the answer must match a fixed schema.
+- **The grade stays the scanners':** the A–F grade is computed from scanner severities, not from the AI's opinion, so nothing on a site can argue its grade up.
+- **Refusal fallback:** security content can trip safety classifiers, so requests use the API's server-side `fallbacks: "default"`; set `SECAI_AI_FALLBACKS=false` if your API proxy rejects it.
+
+Without a key, scans work exactly the same and the report says AI analysis is off.
 
 **Scanner safety.** Every connection to a user's site goes through a guard that resolves the hostname, refuses private, loopback, link-local and cloud-metadata addresses, pins the connection to the checked address and re-checks every redirect. `SECAI_SCAN_ALLOW_PRIVATE=true` lifts this for local development only; the API refuses to start with it in production.
 

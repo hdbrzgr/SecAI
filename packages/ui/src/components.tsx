@@ -489,6 +489,7 @@ export function FindingRow({
   href,
   onClick,
   expanded,
+  badge,
 }: {
   severity: Severity;
   title: string;
@@ -499,6 +500,8 @@ export function FindingRow({
   href?: string;
   onClick?: () => void;
   expanded?: boolean;
+  /** Extra status shown before the chevron, like an AI verdict badge. */
+  badge?: React.ReactNode;
 }) {
   const body = (
     <>
@@ -520,6 +523,7 @@ export function FindingRow({
           </Badge>
         )}
         {status === "accepted" && <Badge>Accepted risk</Badge>}
+        {badge}
         {(href || onClick) && (
           <Icon name="chevron-right" className={cx("sx-finding-chevron", expanded && "is-open")} />
         )}

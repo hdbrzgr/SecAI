@@ -50,12 +50,32 @@ export type ToolRun = {
   seconds?: number;
 };
 
+export type AiVerdict = "likely_real" | "needs_review" | "likely_false_positive";
+
+export type FindingAi = {
+  verdict: AiVerdict;
+  severity: Severity;
+  explanation: string;
+  impact: string;
+  fix_steps: string[];
+  code_example: { language: string; code: string } | null;
+};
+
+export type ScanAi = {
+  status: "ok" | "skipped" | "declined" | "incomplete" | "failed";
+  reason: string | null;
+  executive_summary: string | null;
+  top_priorities: string[];
+  model: string | null;
+};
+
 export type ScanSummary = {
   score?: number;
   grade?: Grade;
   counts?: Partial<Record<Severity, number>>;
   tools?: ToolRun[];
   seconds?: number;
+  ai?: ScanAi | null;
 };
 
 export type ScanBrief = {
@@ -81,6 +101,8 @@ export type Finding = {
   description: string | null;
   recommendation: string | null;
   references: string[];
+  fingerprint: string;
+  ai: FindingAi | null;
 };
 
 export type Scan = ScanBrief & {

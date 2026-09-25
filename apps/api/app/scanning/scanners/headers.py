@@ -30,6 +30,26 @@ class HeadersScanner:
         final = page.url
         h = page.headers
         is_https = final.startswith("https://")
+        ctx.observations.update(
+            {
+                k: h[v][:120]
+                for k, v in (
+                    ("server", "server"),
+                    ("powered_by", "x-powered-by"),
+                    ("generator", "x-generator"),
+                )
+                if v in h
+            }
+        )
+        ctx.observations["final_url"] = final
+        ctx.observations["cookie_names"] = [
+            c.split("=", 1)[0].strip() for c in h.get_list("set-cookie")
+        ][:10]
+        gen = re.search(
+            r'<meta[^>]+name=["\']generator["\'][^>]+content=["\']([^"\']{1,80})', page.text, re.I
+        )
+        if gen:
+            ctx.observations["meta_generator"] = gen.group(1)
 
         # HTTP should redirect to HTTPS.
         http_url = urlunsplit(("http", urlsplit(ctx.url).netloc, "/", "", ""))

@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.ai.analysis import analyze
 from app.core.netguard import TargetNotAllowed
 from app.models import Finding, Scan, ScanStatus, Target
 from app.scanning.normalize import RawFinding, dedupe, grade
@@ -71,6 +72,27 @@ async def run_scan(
             tools.append(entry)
 
         findings = dedupe(collected)
+        ai = None
+        if any(t["status"] == "ok" for t in tools):
+            scan.current_step = "Reviewing findings with AI"
+            scan.progress = max(scan.progress, 90)
+            await db.commit()
+            t0 = time.monotonic()
+            try:
+                ai = await analyze(ctx.url, ctx.observations, findings)
+            except Exception:
+                log.exception("AI analysis failed for scan %s", scan_id)
+                ai = None
+            tools.append(
+                {
+                    "name": "ai",
+                    "status": {"ok": "ok", "skipped": "skipped"}.get(ai.status, "failed")
+                    if ai
+                    else "failed",
+                    "reason": ai.reason if ai else "Unexpected error",
+                    "seconds": round(time.monotonic() - t0, 1),
+                }
+            )
         for f in findings:
             db.add(
                 Finding(
@@ -87,16 +109,18 @@ async def run_scan(
                     recommendation=f.recommendation,
                     references=f.references,
                     raw=f.raw,
+                    ai=ai.by_fingerprint.get(f.fingerprint) if ai else None,
                 )
             )
         score, letter, counts = grade(findings)
-        ran = [t for t in tools if t["status"] == "ok"]
+        ran = [t for t in tools if t["status"] == "ok" and t["name"] != "ai"]
         scan.summary = {
             "score": score,
             "grade": letter,
             "counts": counts,
             "tools": tools,
             "seconds": round(time.monotonic() - started, 1),
+            "ai": ai.summary() if ai else None,
         }
         scan.progress = 100
         scan.finished_at = datetime.now(UTC)

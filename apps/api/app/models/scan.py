@@ -81,5 +81,7 @@ class Finding(IdMixin, Base):
     description: Mapped[str | None] = mapped_column(Text)
     recommendation: Mapped[str | None] = mapped_column(Text)
     references: Mapped[list[str]] = mapped_column(JSONType, default=list)
+    # Claude's assessment: verdict, adjusted severity, explanation, fix steps, code example.
+    ai: Mapped[dict[str, Any] | None] = mapped_column(JSONType)
     raw: Mapped[dict[str, Any]] = mapped_column(JSONType, default=dict)
     created_at: Mapped[datetime] = mapped_column(default=utcnow)

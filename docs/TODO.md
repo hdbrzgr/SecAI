@@ -44,13 +44,16 @@ Legend: `[ ]` todo · `[x]` done · **(MVP)** = required for private beta
 - [ ] Safety: per-target rate limits, global kill switch, domain blocklist, published scanner IPs, abuse email
 
 ## Phase 2 — AI analysis & reports
-- [ ] **(MVP)** Claude API client with retries, cost tracking, per-plan budget
-- [ ] **(MVP)** Secret/PII redaction before LLM calls
-- [ ] **(MVP)** Per-finding enrichment (structured JSON): verdict, confidence, adjusted severity, explanation, impact, fix steps, code/config snippet for the detected stack, references (CWE/OWASP)
-- [ ] **(MVP)** Scan executive summary + security score/grade
-- [ ] Enrichment cache keyed by fingerprint; prompt caching for the system prompt
+- [x] **(MVP)** Claude API client with retries and token usage recorded per scan
+- [ ] Per-workspace AI budget / quota
+- [x] **(MVP)** Secret/PII redaction before LLM calls
+- [x] **(MVP)** Per-finding enrichment (structured output): verdict, adjusted severity, explanation, impact, fix steps, code/config snippet for the detected stack
+- [x] **(MVP)** Scan executive summary, fix-first list, and security score/grade (grade stays scanner-based)
+- [x] Prompt caching for the system prompt
+- [ ] Enrichment cache keyed by fingerprint across scans
 - [ ] Model routing (cheap model for bulk, strong model for critical / FP adjudication)
-- [ ] **(MVP)** Report UI: severity filters, grouped findings, "how to fix" tabs
+- [x] **(MVP)** Report UI: AI summary, verdict badges, AI explanation and fix steps per finding
+- [ ] Severity filters and search in the report
 - [ ] PDF / Markdown export
 - [ ] "Mark false positive / accepted risk" and feed it back into future scans
 - [ ] Eval set: sample findings with expected verdicts to regression-test prompts

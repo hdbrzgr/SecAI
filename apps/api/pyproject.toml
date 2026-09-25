@@ -19,6 +19,7 @@ dependencies = [
     "arq",
     "dnspython>=2.8.0",
     "httpx>=0.28.1",
+    "anthropic>=1.8.0",
 ]
 
 [dependency-groups]

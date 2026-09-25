@@ -10,13 +10,23 @@ import {
   CodeBlock,
   EmptyState,
   FindingRow,
+  Icon,
   ProgressBar,
   ScoreGrade,
+  SeverityBadge,
   SeveritySummary,
   StatusPill,
   Tabs,
 } from "@secai/ui";
-import { api, ApiError, formatDate, type Finding, type Scan, type ToolRun } from "@/lib/api";
+import {
+  api,
+  ApiError,
+  formatDate,
+  type Finding,
+  type FindingAi,
+  type Scan,
+  type ToolRun,
+} from "@/lib/api";
 
 const TOOL_LABEL: Record<string, string> = {
   headers: "Security headers and cookies",
@@ -24,28 +34,88 @@ const TOOL_LABEL: Record<string, string> = {
   exposure: "Exposed files",
   nuclei: "Nuclei templates",
   zap: "OWASP ZAP",
+  ai: "AI analysis (Claude)",
 };
 
-function FindingDetail({ f }: { f: Finding }) {
+const SEVERITY_LABEL: Record<string, string> = {
+  critical: "Critical",
+  high: "High",
+  medium: "Medium",
+  low: "Low",
+  info: "Info",
+};
+
+function VerdictBadge({ ai }: { ai: FindingAi | null }) {
+  if (!ai || ai.verdict === "likely_real") return null;
+  return ai.verdict === "needs_review" ? (
+    <Badge tone="warning">Needs review</Badge>
+  ) : (
+    <Badge>Likely false positive</Badge>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-4 border-b border-line bg-[var(--surface)] px-5 py-5 sm:pl-[148px]">
-      {f.description && (
-        <section className="flex flex-col gap-1">
-          <h3 className="eyebrow m-0">What it means</h3>
-          <p className="prose-text m-0 !text-[var(--ink)]">{f.description}</p>
-        </section>
-      )}
-      {f.recommendation && (
-        <section className="flex flex-col gap-1">
-          <h3 className="eyebrow m-0">How to fix it</h3>
-          <p className="prose-text m-0 !text-[var(--ink)]">{f.recommendation}</p>
-        </section>
+    <section className="flex flex-col gap-1.5">
+      <h3 className="eyebrow m-0">{title}</h3>
+      {children}
+    </section>
+  );
+}
+
+function FindingDetail({ f }: { f: Finding }) {
+  const ai = f.ai;
+  return (
+    <div className="flex flex-col gap-5 border-b border-line bg-[var(--surface)] px-5 py-5 sm:pl-[148px]">
+      {ai ? (
+        <>
+          <p className="m-0 flex flex-wrap items-center gap-2 text-[13px] text-ink-muted">
+            <Icon name="shield-check" size={14} />
+            AI assessment: <strong className="text-ink">{SEVERITY_LABEL[ai.severity]}</strong>
+            {ai.severity !== f.severity && <span>(scanner said {SEVERITY_LABEL[f.severity]})</span>}
+            <span>·</span>
+            {ai.verdict === "likely_real" ? "Likely real" : ai.verdict === "needs_review" ? "Needs review" : "Likely false positive"}
+          </p>
+          <Section title="What it means">
+            <p className="prose-text m-0 !text-[var(--ink)]">{ai.explanation}</p>
+            <p className="prose-text m-0">{ai.impact}</p>
+          </Section>
+          {ai.fix_steps.length > 0 && (
+            <Section title="How to fix it">
+              <ol className="prose-text m-0 flex list-decimal flex-col gap-1 pl-5 !text-[var(--ink)]">
+                {ai.fix_steps.map((step, i) => (
+                  <li key={i}>{step}</li>
+                ))}
+              </ol>
+            </Section>
+          )}
+          {ai.code_example && (
+            <CodeBlock title={ai.code_example.language} lines={ai.code_example.code.trimEnd().split("\n")} />
+          )}
+        </>
+      ) : (
+        <>
+          {f.description && (
+            <Section title="What it means">
+              <p className="prose-text m-0 !text-[var(--ink)]">{f.description}</p>
+            </Section>
+          )}
+          {f.recommendation && (
+            <Section title="How to fix it">
+              <p className="prose-text m-0 !text-[var(--ink)]">{f.recommendation}</p>
+            </Section>
+          )}
+        </>
       )}
       {f.evidence && (
-        <section className="flex flex-col gap-2">
-          <h3 className="eyebrow m-0">Evidence</h3>
+        <Section title="Evidence">
           <CodeBlock title={f.location.url} lines={f.evidence.trimEnd().split("\n")} />
-        </section>
+        </Section>
+      )}
+      {ai && f.recommendation && (
+        <Section title="Scanner's recommendation">
+          <p className="prose-text m-0">{f.recommendation}</p>
+        </Section>
       )}
       <div className="flex flex-wrap items-center gap-2 text-[13px] text-ink-muted">
         <span className="font-mono">{f.rule_id}</span>
@@ -55,10 +125,55 @@ function FindingDetail({ f }: { f: Finding }) {
           </a>
         ))}
       </div>
-      <p className="m-0 text-[13px] text-ink-muted">
-        AI explanations tailored to your stack arrive in the next release.
-      </p>
     </div>
+  );
+}
+
+function AiSummary({ scan, onOpen }: { scan: Scan; onOpen: (id: string) => void }) {
+  const ai = scan.summary.ai;
+  if (!ai) return null;
+  if (ai.status === "skipped") {
+    if (scan.findings.length === 0) return null;
+    return (
+      <Alert tone="info" title="AI analysis is off on this instance">
+        Add an Anthropic API key (SECAI_ANTHROPIC_API_KEY) to get plain-language explanations and
+        fixes written for your stack.
+      </Alert>
+    );
+  }
+  if (ai.status !== "ok") {
+    return (
+      <Alert tone="warning" title="AI analysis didn't finish">
+        {ai.reason ?? "Something went wrong."} The scanner results below are complete.
+      </Alert>
+    );
+  }
+  const byFp = new Map(scan.findings.map((f) => [f.fingerprint, f]));
+  const priorities = ai.top_priorities.map((fp) => byFp.get(fp)).filter((f): f is Finding => Boolean(f));
+  return (
+    <Card title="AI summary">
+      <div className="flex flex-col gap-5">
+        <p className="prose-text m-0 text-[16px] leading-[26px] !text-[var(--ink)]">{ai.executive_summary}</p>
+        {priorities.length > 0 && (
+          <Section title="Fix first">
+            <ol className="m-0 flex list-none flex-col gap-2 p-0">
+              {priorities.map((f, i) => (
+                <li key={f.id} className="flex items-center gap-3">
+                  <span className="w-5 font-mono text-[13px] text-ink-muted">{i + 1}</span>
+                  <SeverityBadge severity={f.severity} pips={false} />
+                  <button type="button" onClick={() => onOpen(f.id)} className="text-link cursor-pointer border-0 bg-transparent p-0 text-left text-[15px]">
+                    {f.title}
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </Section>
+        )}
+        <p className="m-0 text-[13px] text-ink-muted">
+          Written by Claude ({ai.model}) from redacted scanner output. Check the evidence before you act on it.
+        </p>
+      </div>
+    </Card>
   );
 }
 
@@ -68,7 +183,7 @@ function ToolRow({ t }: { t: ToolRun }) {
       <span className="flex-1 font-medium">{TOOL_LABEL[t.name] ?? t.name}</span>
       {t.status === "ok" ? (
         <Badge tone="signal" icon="check">
-          {t.findings} finding{t.findings === 1 ? "" : "s"}
+          {t.findings === undefined ? "Done" : `${t.findings} finding${t.findings === 1 ? "" : "s"}`}
         </Badge>
       ) : t.status === "skipped" ? (
         <Badge>Skipped</Badge>
@@ -173,6 +288,15 @@ export default function ScanPage() {
             </div>
           </Card>
 
+          <AiSummary
+            scan={scan}
+            onOpen={(fid) => {
+              setTab("findings");
+              setOpen(fid);
+              setTimeout(() => document.getElementById(`finding-${fid}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+            }}
+          />
+
           <Tabs
             label="Report sections"
             value={tab}
@@ -193,6 +317,7 @@ export default function ScanPage() {
                 <div>
                   {scan.findings.map((f) => (
                     <Fragment key={f.id}>
+                      <span id={`finding-${f.id}`} />
                       <FindingRow
                         severity={f.severity}
                         title={f.title}
@@ -200,6 +325,7 @@ export default function ScanPage() {
                         tool={f.tool}
                         cwe={f.cwe ?? undefined}
                         expanded={open === f.id}
+                        badge={<VerdictBadge ai={f.ai} />}
                         onClick={() => setOpen(open === f.id ? null : f.id)}
                       />
                       {open === f.id && <FindingDetail f={f} />}

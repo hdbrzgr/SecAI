@@ -215,7 +215,9 @@ async def test_full_scan_flow(app, client, site):
     assert scan["summary"]["grade"] == "F"
     assert scan["summary"]["counts"]["critical"] == 1
     tools = {t["name"]: t["status"] for t in scan["summary"]["tools"]}
-    assert tools == {"headers": "ok", "tls": "ok", "exposure": "ok"}
+    # No API key in tests: the AI step is skipped and the report still works.
+    assert tools == {"headers": "ok", "tls": "ok", "exposure": "ok", "ai": "skipped"}
+    assert scan["summary"]["ai"]["status"] == "skipped"
 
     listed = (await client.get("/targets")).json()
     assert listed[0]["last_scan"]["summary"]["grade"] == "F"

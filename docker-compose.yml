@@ -70,6 +70,10 @@ services:
       <<: *api-env
       SECAI_ZAP_URL: http://zap:8090
       SECAI_ZAP_API_KEY: ${SECAI_ZAP_API_KEY:?set SECAI_ZAP_API_KEY in .env}
+      # Optional: AI analysis of findings with Claude.
+      SECAI_ANTHROPIC_API_KEY: ${SECAI_ANTHROPIC_API_KEY:-}
+      SECAI_AI_MODEL: ${SECAI_AI_MODEL:-claude-opus-5}
+      SECAI_AI_EFFORT: ${SECAI_AI_EFFORT:-high}
     networks: [default, scanners]
     depends_on:
       api: { condition: service_healthy }
