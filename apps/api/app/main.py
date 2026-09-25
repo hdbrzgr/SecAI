@@ -3,11 +3,13 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from urllib.parse import urlsplit
 
+from arq import create_pool
+from arq.connections import RedisSettings
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
 from redis.asyncio import Redis
 
-from app.api.routes import auth, health
+from app.api.routes import auth, health, scans, targets
 from app.core.config import get_settings
 
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
@@ -28,8 +30,11 @@ def create_app() -> FastAPI:
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         if not hasattr(app.state, "redis"):
             app.state.redis = Redis.from_url(settings.redis_url, decode_responses=True)
+        if not hasattr(app.state, "arq"):
+            app.state.arq = await create_pool(RedisSettings.from_dsn(settings.redis_url))
         yield
         await app.state.redis.aclose()
+        await app.state.arq.aclose()
 
     app = FastAPI(
         title="SecAI API",
@@ -74,6 +79,8 @@ def create_app() -> FastAPI:
 
     app.include_router(health.router)
     app.include_router(auth.router)
+    app.include_router(targets.router)
+    app.include_router(scans.router)
     return app
 
 

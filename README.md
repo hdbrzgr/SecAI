@@ -34,6 +34,21 @@ For a real deployment, put a TLS reverse proxy (Caddy, Traefik, nginx) in front 
 
 The API needs Postgres and Redis. The simplest way to get them locally is `docker compose up -d postgres redis`, then publish their ports or use local installs. See `apps/api/app/core/config.py` for every `SECAI_*` setting.
 
+## What a website scan checks
+
+Add a website, prove you own it (DNS TXT record, a file at `/.well-known/secai-verify.txt`, or a `<meta name="secai-verify">` tag), confirm you're authorized, then run a scan. The worker runs:
+
+| Scanner | Checks |
+|---|---|
+| Headers | HTTPS and HTTP→HTTPS redirect, HSTS, CSP, clickjacking protection, nosniff, Referrer-Policy, version disclosure, CORS, cookie flags |
+| TLS | Certificate trust and hostname, expiry, TLS 1.0/1.1 support |
+| Exposed files | `.git`, `.env`, `.svn`, `.DS_Store`, phpinfo, server-status, config backups, AWS credentials (confirmed by content, contents of secrets never stored) |
+| Nuclei | ProjectDiscovery's HTTP templates; `dos`, `fuzz`, `bruteforce` and `intrusive` templates are excluded; rate limited |
+
+Findings are normalized, deduplicated and graded A–F. OWASP ZAP and AI-written explanations are next on the roadmap.
+
+**Scanner safety.** Every connection to a user's site goes through a guard that resolves the hostname, refuses private, loopback, link-local and cloud-metadata addresses, pins the connection to the checked address and re-checks every redirect. `SECAI_SCAN_ALLOW_PRIVATE=true` lifts this for local development only; the API refuses to start with it in production.
+
 ## Security design (so far)
 
 - Passwords hashed with **argon2id**. Login timing is the same whether or not the account exists.

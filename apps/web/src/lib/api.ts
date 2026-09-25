@@ -36,3 +36,73 @@ export async function api<T>(path: string, init: { method?: string; body?: unkno
   if (!res.ok) throw new ApiError(res.status, errorMessage(data.detail));
   return data as T;
 }
+
+export type Severity = "critical" | "high" | "medium" | "low" | "info";
+export type ScanStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled";
+export type VerificationMethod = "dns_txt" | "well_known_file" | "meta_tag";
+export type Grade = "A" | "B" | "C" | "D" | "F";
+
+export type ToolRun = {
+  name: string;
+  status: "ok" | "skipped" | "failed" | "blocked";
+  findings?: number;
+  reason?: string;
+  seconds?: number;
+};
+
+export type ScanSummary = {
+  score?: number;
+  grade?: Grade;
+  counts?: Partial<Record<Severity, number>>;
+  tools?: ToolRun[];
+  seconds?: number;
+};
+
+export type ScanBrief = {
+  id: string;
+  status: ScanStatus;
+  progress: number;
+  current_step: string | null;
+  summary: ScanSummary;
+  created_at: string;
+  started_at: string | null;
+  finished_at: string | null;
+};
+
+export type Finding = {
+  id: string;
+  tool: string;
+  rule_id: string;
+  title: string;
+  severity: Severity;
+  cwe: string | null;
+  location: { url?: string; param?: string };
+  evidence: string | null;
+  description: string | null;
+  recommendation: string | null;
+  references: string[];
+};
+
+export type Scan = ScanBrief & {
+  target_id: string | null;
+  target_url: string | null;
+  error: string | null;
+  findings: Finding[];
+};
+
+export type Target = {
+  id: string;
+  url: string;
+  hostname: string;
+  verification_token: string;
+  verification_method: VerificationMethod | null;
+  verified_at: string | null;
+  verification_expired: boolean;
+  created_at: string;
+  last_scan: ScanBrief | null;
+};
+
+export function formatDate(iso: string | null): string {
+  if (!iso) return "";
+  return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+}

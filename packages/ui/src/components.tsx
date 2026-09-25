@@ -487,6 +487,8 @@ export function FindingRow({
   cwe,
   status = "open",
   href,
+  onClick,
+  expanded,
 }: {
   severity: Severity;
   title: string;
@@ -495,6 +497,8 @@ export function FindingRow({
   cwe?: string;
   status?: FindingStatus;
   href?: string;
+  onClick?: () => void;
+  expanded?: boolean;
 }) {
   const body = (
     <>
@@ -516,16 +520,26 @@ export function FindingRow({
           </Badge>
         )}
         {status === "accepted" && <Badge>Accepted risk</Badge>}
-        {href && <Icon name="chevron-right" className="sx-finding-chevron" />}
+        {(href || onClick) && (
+          <Icon name="chevron-right" className={cx("sx-finding-chevron", expanded && "is-open")} />
+        )}
       </span>
     </>
   );
+  const className = cx("sx-finding", status === "fixed" && "is-fixed", expanded && "is-expanded");
+  if (onClick) {
+    return (
+      <button type="button" className={className} onClick={onClick} aria-expanded={expanded}>
+        {body}
+      </button>
+    );
+  }
   return href ? (
-    <a href={href} className={cx("sx-finding", status === "fixed" && "is-fixed")}>
+    <a href={href} className={className}>
       {body}
     </a>
   ) : (
-    <div className={cx("sx-finding", status === "fixed" && "is-fixed")}>{body}</div>
+    <div className={className}>{body}</div>
   );
 }
 

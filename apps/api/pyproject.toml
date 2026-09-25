@@ -17,6 +17,8 @@ dependencies = [
     "pyotp",
     "redis>=5",
     "arq",
+    "dnspython>=2.8.0",
+    "httpx>=0.28.1",
 ]
 
 [dependency-groups]
@@ -41,7 +43,10 @@ select = ["E", "F", "I", "B", "UP", "S", "ASYNC", "RUF"]
 ignore = ["B008"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101", "S105", "S106"]
+"tests/**" = ["S101", "S104", "S105", "S106"]
+# Scanners carry long human-readable finding text, and deliberately treat
+# unreachable paths as "no finding".
+"app/scanning/scanners/**" = ["E501", "S110", "S112"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

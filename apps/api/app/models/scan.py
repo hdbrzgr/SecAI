@@ -49,6 +49,13 @@ class Scan(IdMixin, TimestampMixin, Base):
     kind: Mapped[ScanKind] = mapped_column(_enum(ScanKind))
     status: Mapped[ScanStatus] = mapped_column(_enum(ScanStatus), default=ScanStatus.queued)
     profile: Mapped[str] = mapped_column(String(50), default="baseline")
+    progress: Mapped[int] = mapped_column(default=0)
+    current_step: Mapped[str | None] = mapped_column(String(200))
+    # Counts per severity, score, grade and per-tool results, filled when the scan ends.
+    summary: Mapped[dict[str, Any]] = mapped_column(JSONType, default=dict)
+    # The user's confirmation that they may scan this target, recorded per scan.
+    attested_at: Mapped[datetime | None]
+    attested_ip: Mapped[str | None] = mapped_column(String(64))
     started_at: Mapped[datetime | None]
     finished_at: Mapped[datetime | None]
     error: Mapped[str | None] = mapped_column(Text)
@@ -71,5 +78,8 @@ class Finding(IdMixin, Base):
     cwe: Mapped[str | None] = mapped_column(String(20))
     location: Mapped[dict[str, Any]] = mapped_column(JSONType, default=dict)
     evidence: Mapped[str | None] = mapped_column(Text)
+    description: Mapped[str | None] = mapped_column(Text)
+    recommendation: Mapped[str | None] = mapped_column(Text)
+    references: Mapped[list[str]] = mapped_column(JSONType, default=list)
     raw: Mapped[dict[str, Any]] = mapped_column(JSONType, default=dict)
     created_at: Mapped[datetime] = mapped_column(default=utcnow)

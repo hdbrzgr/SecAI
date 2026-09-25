@@ -22,19 +22,23 @@ Legend: `[ ]` todo · `[x]` done · **(MVP)** = required for private beta
 - [ ] Trusted-proxy config so per-IP rate limits can't be bypassed with a spoofed `X-Forwarded-For` when the API sits behind extra proxies
 
 ## Phase 1 — Website pentest (DAST) MVP
-- [ ] **(MVP)** Add target (URL) + normalize/validate
-- [ ] **(MVP)** Domain ownership verification: DNS TXT / well-known file / meta tag + periodic re-check
-- [ ] **(MVP)** SSRF guard: block private/reserved IPs, re-resolve per request, isolated scanner network
-- [ ] **(MVP)** Scan orchestrator: create scan → steps → run containers → collect output → timeouts/retries/cancel
-- [ ] **(MVP)** Scanner: security headers / cookies / CORS / HTTPS redirect (custom Python)
-- [ ] **(MVP)** Scanner: TLS config (sslyze or testssl.sh)
+- [x] **(MVP)** Add target (URL) + normalize/validate (domains only; IDN support; one per workspace)
+- [x] **(MVP)** Domain ownership verification: DNS TXT / well-known file / meta tag; proof expires after 90 days
+- [ ] Background re-check of ownership proofs (currently checked at scan time only by age)
+- [x] **(MVP)** SSRF guard: block private/reserved IPs, pin connections to the validated IP, re-check every redirect
+- [ ] Egress firewall for the worker container (defense in depth against DNS rebinding inside external tools)
+- [x] **(MVP)** Scan orchestrator: ARQ job, per-tool status, progress, one active scan per website, daily limit, attestation per scan
+- [ ] Cancel a running scan; per-tool timeouts surfaced in the UI
+- [x] **(MVP)** Scanner: security headers / cookies / CORS / HTTPS redirect / version disclosure (custom Python)
+- [x] **(MVP)** Scanner: TLS certificate trust, expiry, legacy TLS 1.0/1.1 (Python ssl)
 - [ ] **(MVP)** Scanner: httpx tech fingerprint
-- [ ] **(MVP)** Scanner: Nuclei (curated safe template set, rate limited)
+- [x] **(MVP)** Scanner: Nuclei in the worker image (http templates; dos, fuzz, brute-force and intrusive tags excluded; rate limited)
 - [ ] **(MVP)** Scanner: OWASP ZAP baseline (passive), then active scan for paid plans
-- [ ] Scanner: exposed files / dirs (ffuf + curated list: `.git`, `.env`, backups)
+- [x] Scanner: exposed files (`.git`, `.env`, `.svn`, backups, phpinfo, server-status, AWS credentials) with content checks; secrets never stored
 - [ ] Scanner: top-ports check (naabu)
-- [ ] **(MVP)** Parsers → normalized findings; dedup by fingerprint
-- [ ] **(MVP)** Scan progress via SSE; scan list + scan detail UI
+- [x] **(MVP)** Parsers → normalized findings; dedup by fingerprint; score and A–F grade
+- [x] **(MVP)** Websites list, verification page, scan history, live progress (polling) and scan report UI
+- [ ] Replace polling with Server-Sent Events
 - [ ] Safety: per-target rate limits, global kill switch, domain blocklist, published scanner IPs, abuse email
 
 ## Phase 2 — AI analysis & reports

@@ -7,6 +7,7 @@ import { UserProvider } from "@/lib/user";
 
 const NAV = [
   { label: "Dashboard", href: "/dashboard" },
+  { label: "Websites", href: "/websites" },
   { label: "Settings", href: "/settings/security" },
 ];
 
@@ -22,7 +23,11 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <>
       <AppHeader
-        nav={NAV.map((item) => ({ ...item, active: pathname.startsWith(item.href) }))}
+        nav={NAV.map((item) => ({
+          ...item,
+          active:
+            pathname.startsWith(item.href) || (item.href === "/websites" && pathname.startsWith("/scans")),
+        }))}
         actions={
           <Button variant="ghost" size="sm" icon="log-out" onClick={signOut}>
             Sign out

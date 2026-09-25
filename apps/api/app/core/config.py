@@ -34,6 +34,17 @@ class Settings(BaseSettings):
     login_rate_limit_per_email: int = 10
     login_rate_limit_window_seconds: int = 15 * 60
 
+    # Scanning
+    # Development/testing only: lets targets resolve to private or loopback addresses.
+    # Refused in production, where it would turn the scanner into an SSRF tool.
+    scan_allow_private: bool = False
+    scans_per_day_per_org: int = 20
+    # Ownership must have been proven within this many days before each scan.
+    verification_max_age_days: int = 90
+    nuclei_path: str = "nuclei"
+    nuclei_templates: str | None = None
+    scan_tool_timeout_seconds: int = 15 * 60
+
     @property
     def cookie_secure(self) -> bool:
         return self.web_origin.startswith("https://")
@@ -50,6 +61,8 @@ class Settings(BaseSettings):
                 raise ValueError("SECAI_SECRET_KEY must be set to a random value of 32+ chars")
             if not self.cookie_secure:
                 raise ValueError("SECAI_WEB_ORIGIN must use https:// in production")
+            if self.scan_allow_private:
+                raise ValueError("SECAI_SCAN_ALLOW_PRIVATE must not be enabled in production")
         return self
 
 

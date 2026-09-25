@@ -9,6 +9,8 @@ x-api-env: &api-env
   SECAI_SECRET_KEY: ${SECAI_SECRET_KEY:?set SECAI_SECRET_KEY in .env}
   SECAI_WEB_ORIGIN: ${SECAI_WEB_ORIGIN:-http://localhost:3000}
   SECAI_ALLOW_REGISTRATION: ${SECAI_ALLOW_REGISTRATION:-true}
+  SECAI_SCANS_PER_DAY_PER_ORG: ${SECAI_SCANS_PER_DAY_PER_ORG:-20}
+  SECAI_VERIFICATION_MAX_AGE_DAYS: ${SECAI_VERIFICATION_MAX_AGE_DAYS:-90}
   SECAI_DATABASE_URL: postgresql+asyncpg://secai:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/secai
   SECAI_REDIS_URL: redis://redis:6379/0
 
@@ -41,7 +43,9 @@ services:
       retries: 10
 
   api:
-    build: ./apps/api
+    build:
+      context: ./apps/api
+      target: api
     restart: unless-stopped
     # Not published on the host: only the web container reaches it, so the forwarded client IP
     # it trusts can only come from the Next.js proxy.
@@ -57,10 +61,12 @@ services:
       retries: 10
 
   worker:
-    build: ./apps/api
+    # Runs the scans: the only container that talks to users' websites.
+    build:
+      context: ./apps/api
+      target: worker
     restart: unless-stopped
     environment: *api-env
-    command: ["arq", "app.worker.WorkerSettings"]
     depends_on:
       api: { condition: service_healthy }
 

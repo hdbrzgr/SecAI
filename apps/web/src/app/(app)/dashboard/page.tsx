@@ -1,11 +1,19 @@
 "use client";
 
-import { Alert, Button, Card, EmptyState } from "@secai/ui";
+import { useEffect, useState } from "react";
+import { Alert, Card, EmptyState } from "@secai/ui";
 import { ButtonLink } from "@/components/ButtonLink";
+import { WebsiteList } from "@/components/WebsiteList";
+import { api, type Target } from "@/lib/api";
 import { useUser } from "@/lib/user";
 
 export default function DashboardPage() {
   const { user } = useUser();
+  const [targets, setTargets] = useState<Target[] | null>(null);
+
+  useEffect(() => {
+    api<Target[]>("/targets").then(setTargets, () => setTargets([]));
+  }, []);
 
   return (
     <div className="flex flex-col gap-6">
@@ -29,19 +37,34 @@ export default function DashboardPage() {
         </Alert>
       )}
 
-      <Card title="Websites" flush>
-        <EmptyState
-          icon="globe"
-          title="No websites yet"
-          action={
-            <Button variant="primary" icon="plus" disabled title="Available in the next release">
+      <Card
+        title="Websites"
+        flush
+        actions={
+          targets && targets.length > 0 ? (
+            <ButtonLink href="/websites/new" size="sm">
               Add website
-            </Button>
-          }
-        >
-          Add a website you own, prove it&apos;s yours, and run your first scan. Adding websites
-          arrives in the next release.
-        </EmptyState>
+            </ButtonLink>
+          ) : undefined
+        }
+      >
+        {targets === null ? (
+          <p className="m-0 px-5 py-4 text-ink-muted">Loading…</p>
+        ) : targets.length === 0 ? (
+          <EmptyState
+            icon="globe"
+            title="No websites yet"
+            action={
+              <ButtonLink href="/websites/new" variant="primary">
+                Add website
+              </ButtonLink>
+            }
+          >
+            Add a website you own, prove it&apos;s yours, and run your first scan.
+          </EmptyState>
+        ) : (
+          <WebsiteList targets={targets} />
+        )}
       </Card>
     </div>
   );

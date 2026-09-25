@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Enum, ForeignKey, String
+from sqlalchemy import Enum, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, IdMixin, TimestampMixin
@@ -18,6 +18,7 @@ class Target(IdMixin, TimestampMixin, Base):
     """A website the organization wants to scan. Active scans require verified ownership."""
 
     __tablename__ = "targets"
+    __table_args__ = (UniqueConstraint("org_id", "hostname"),)
 
     org_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("organizations.id", ondelete="CASCADE"), index=True

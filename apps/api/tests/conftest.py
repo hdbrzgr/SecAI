@@ -14,6 +14,7 @@ from sqlalchemy.pool import StaticPool
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import create_app
+from app.scanning.queue import get_enqueue
 
 ORIGIN = "http://localhost:3000"
 # Set SECAI_TEST_DATABASE_URL to run the suite against Postgres (CI does).
@@ -36,6 +37,16 @@ async def app():
     application = create_app()
     application.state.redis = fakeredis.FakeAsyncRedis(decode_responses=True)
     application.dependency_overrides[get_db] = _get_db
+    application.state.sessionmaker = sessionmaker
+    application.state.enqueued = []
+
+    def _get_enqueue():
+        async def enqueue(name, *args):
+            application.state.enqueued.append((name, *args))
+
+        return enqueue
+
+    application.dependency_overrides[get_enqueue] = _get_enqueue
     yield application
     await engine.dispose()
 
