@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+/* Tailwind is used for page layout only. Colors, type and components come from @secai/ui
+   (tokens.css and styles.css, imported in the root layout); these aliases let layout
+   utilities use the same tokens. Tailwind's font-sans/font-mono utilities already read
+   --font-sans/--font-mono, which tokens.css sets. */
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-signal: var(--signal);
+  --color-night: var(--night);
+  --color-on-night: var(--on-night);
+}
+
+.page-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 34px;
+  line-height: 40px;
+  text-wrap: balance;
+}
+.eyebrow {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.prose-text {
+  max-width: var(--prose-max);
+  color: var(--ink-muted);
+}
+.text-link {
+  color: var(--link);
+  font-weight: 500;
+  text-underline-offset: 3px;
+}
+.text-link:hover {
+  text-decoration: underline;
+}
+.font-display {
+  font-family: var(--font-display);
+}

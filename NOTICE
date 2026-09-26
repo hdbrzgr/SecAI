@@ -1,0 +1,24 @@
+SecAI
+Copyright (C) 2026 hdbrzgr — https://github.com/hdbrzgr/SecAI
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License version 3 (see LICENSE),
+with the following additional term under section 7(b) of that license:
+
+  Attribution requirement
+  -----------------------
+  Any version of this program you run, host, or distribute, modified or not,
+  must keep a reasonable, visible attribution in its user interface that reads
+  "Powered by SecAI by hdbrzgr" (or equivalent wording) and links to
+  https://github.com/hdbrzgr/SecAI. By default this is shown in the footer of
+  every page of the web app. You may restyle it, but you may not remove it or
+  hide it from users.
+
+  You must also keep this NOTICE file and the copyright notices in the source.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+Third-party security tools that SecAI runs (OWASP ZAP, Nuclei, etc.) are
+separate programs under their own licenses; see docs/STACK.md.

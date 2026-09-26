@@ -1,0 +1,10 @@
+# Used by builds whose context is the repository root (the web image).
+**/node_modules
+**/.next
+**/dist
+**/.venv
+**/__pycache__
+.git
+.env
+.env.*
+apps/api

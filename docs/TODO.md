@@ -1,0 +1,102 @@
+# SecAI — TODO / Roadmap
+
+Legend: `[ ]` todo · `[x]` done · **(MVP)** = required for private beta
+
+## Phase 0 — Foundation
+- [x] **(MVP)** Monorepo scaffold: `apps/web` (Next.js), `apps/api` (FastAPI + ARQ worker); `scanners/` added in Phase 1
+- [x] **(MVP)** Docker Compose dev env: Postgres, Redis, API, worker, web
+- [x] **(MVP)** GitHub Actions CI: lint (ruff, eslint), typecheck (tsc), tests on Postgres, migration check, image builds
+- [ ] Python type checking (mypy or pyright) in CI
+- [x] **(MVP)** LICENSE (AGPL-3.0) + NOTICE attribution term + UI footer credit
+- [x] **(MVP)** Self-hosted auth: register/login/logout, argon2id, server-side sessions, CSRF/Origin check, login rate limit
+- [x] **(MVP)** TOTP two-factor auth (secrets encrypted at rest)
+- [x] **(MVP)** Workspace (org) model created on sign-up
+- [x] Email verification + password reset (needs SMTP); change password
+- [ ] MFA recovery codes, passkeys (WebAuthn), GitHub login, generic OIDC
+- [x] Worker cron job that deletes expired sessions and tokens, and fails stuck scans
+- [x] **(MVP)** DB schema + migrations (Alembic): users, sessions, organizations, memberships, targets, scans, findings
+- [ ] Remaining tables as their phases need them: scan_steps, finding_groups, ai_enrichments, usage/quotas
+- [ ] **(MVP)** Unified `Finding` schema (Pydantic, exported as JSON Schema → TS types)
+- [x] Settings: env config (`SECAI_*`), refuses to start in production with a weak secret or plain-http origin
+- [ ] Optional Sentry / OpenTelemetry
+- [x] Documented proxy requirements so per-IP rate limits can't be bypassed (Caddy profile overwrites `X-Forwarded-For`)
+- [ ] Admin can create or invite accounts directly (today: open sign-ups briefly)
+
+## Phase 1 — Website pentest (DAST) MVP
+- [x] **(MVP)** Add target (URL) + normalize/validate (domains only; IDN support; one per workspace)
+- [x] **(MVP)** Domain ownership verification: DNS TXT / well-known file / meta tag; proof expires after 90 days
+- [ ] Background re-check of ownership proofs (currently checked at scan time only by age)
+- [x] **(MVP)** SSRF guard: block private/reserved IPs, pin connections to the validated IP, re-check every redirect
+- [ ] Egress firewall for the worker container (defense in depth against DNS rebinding inside external tools)
+- [x] **(MVP)** Scan orchestrator: ARQ job, per-tool status, progress, one active scan per website, daily limit, attestation per scan
+- [ ] Cancel a running scan; per-tool timeouts surfaced in the UI
+- [x] **(MVP)** Scanner: security headers / cookies / CORS / HTTPS redirect / version disclosure (custom Python)
+- [x] **(MVP)** Scanner: TLS certificate trust, expiry, legacy TLS 1.0/1.1 (Python ssl)
+- [ ] **(MVP)** Scanner: httpx tech fingerprint
+- [x] **(MVP)** Scanner: Nuclei in the worker image (http templates; dos, fuzz, brute-force and intrusive tags excluded; rate limited)
+- [x] **(MVP)** Scanner: OWASP ZAP baseline (spider + passive rules) via its API, one session at a time, isolated network
+- [ ] ZAP active scan as an opt-in "full scan" profile (safe policy, no DoS)
+- [ ] ZAP AJAX spider for single-page apps
+- [x] Scanner: exposed files (`.git`, `.env`, `.svn`, backups, phpinfo, server-status, AWS credentials) with content checks; secrets never stored
+- [ ] Scanner: top-ports check (naabu)
+- [x] **(MVP)** Parsers → normalized findings; dedup by fingerprint; score and A–F grade
+- [x] **(MVP)** Websites list, verification page, scan history, live progress (polling) and scan report UI
+- [ ] Replace polling with Server-Sent Events
+- [ ] Safety: per-target rate limits, global kill switch, domain blocklist, published scanner IPs, abuse email
+
+## Phase 2 — AI analysis & reports
+- [x] **(MVP)** Claude API client with retries and token usage recorded per scan
+- [ ] Per-workspace AI budget / quota
+- [x] **(MVP)** Secret/PII redaction before LLM calls
+- [x] **(MVP)** Per-finding enrichment (structured output): verdict, adjusted severity, explanation, impact, fix steps, code/config snippet for the detected stack
+- [x] **(MVP)** Scan executive summary, fix-first list, and security score/grade (grade stays scanner-based)
+- [x] Prompt caching for the system prompt
+- [ ] Enrichment cache keyed by fingerprint across scans
+- [ ] Model routing (cheap model for bulk, strong model for critical / FP adjudication)
+- [x] **(MVP)** Report UI: AI summary, verdict badges, AI explanation and fix steps per finding
+- [ ] Severity filters and search in the report
+- [ ] PDF / Markdown export
+- [ ] "Mark false positive / accepted risk" and feed it back into future scans
+- [ ] Eval set: sample findings with expected verdicts to regression-test prompts
+
+## Phase 3 — Self-host release
+- [x] **(MVP)** Admin-configurable limits (scans/day, websites per workspace, sign-ups) enforced in the API
+- [x] **(MVP)** Usage overview (users, websites, scans, AI tokens) in the admin panel
+- [x] **(MVP)** Admin panel: users, domain blocklist, kill switch, settings, audit log
+- [x] **(MVP)** Transactional emails via SMTP (verify email, password reset, scan finished)
+- [x] **(MVP)** Install guide, upgrade guide, backup guide, hardening checklist; optional Caddy HTTPS profile
+- [x] **(MVP)** ToS / Acceptable Use templates + authorization attestation (recorded in the audit log)
+- [ ] Optional billing module: Stripe trial + subscriptions mapped to quotas (off by default)
+- [ ] **🚀 v0.1 public release**
+
+## Phase 4 — GitHub code scanning
+- [ ] Register GitHub App (read-only Contents + Metadata; later Checks / PRs write)
+- [ ] Install flow → list/select repos → store installation id
+- [ ] Ephemeral shallow clone in worker using installation token; delete after scan
+- [ ] Scanner: Opengrep/Semgrep engine with a license-compatible ruleset (SARIF)
+- [ ] Scanner: OSV-Scanner / Trivy fs (dependencies)
+- [ ] Scanner: Gitleaks (tree + history)
+- [ ] Scanner: Trivy config / Checkov (IaC, Dockerfile)
+- [ ] SARIF parser → unified findings with file/line + code snippet
+- [ ] AI enrichment for code: explain the vulnerable flow, propose a patch (diff)
+- [ ] Webhooks: scan on push to default branch / on PR
+- [ ] Post results as a GitHub Check run + PR review comments
+- [ ] Optional: upload SARIF to GitHub Code Scanning
+
+## Phase 5 — Depth & retention
+- [ ] Scheduled scans (weekly/daily) + "new / fixed / still open" diff
+- [ ] Authenticated DAST (login recorder / session cookie / header auth via ZAP contexts)
+- [ ] API scanning from OpenAPI/Swagger spec
+- [ ] AI "chat with your report"
+- [ ] AI auto-fix PRs on GitHub
+- [ ] Slack / Discord / email alerts
+- [ ] Team seats, roles, audit log, SSO (Team plan)
+- [ ] Public status badge / trust page for customers
+- [ ] SOC 2-lite hygiene: backups, access reviews, incident runbook
+
+## Open decisions (need your input)
+- [x] Distribution: open source, self-hosted, AGPL-3.0 + attribution
+- [x] Auth: self-hosted, built into the API, security-hardened
+- [x] Queue: Redis + ARQ
+- [x] Name: SecAI
+- [ ] Default pricing numbers for the optional billing module

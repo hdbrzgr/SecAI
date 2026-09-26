@@ -1,0 +1,13 @@
+{
+  "name": "secai",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "workspaces": [
+    "apps/web",
+    "packages/ui"
+  ],
+  "scripts": {
+    "build:ui": "npm run build -w @secai/ui",
+    "dev:web": "npm run dev -w secai-web"
+  }
+}

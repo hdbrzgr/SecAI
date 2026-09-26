@@ -1,0 +1,24 @@
+<!-- @dsCard group="Security" height=280 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>DomainVerification</title>
+<style>
+  .ds-row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+  .ds-stack { display: flex; flex-direction: column; gap: var(--space-4); }
+  .ds-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-5); }
+  .ds-flush { border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden; }
+  .ds-flush > :last-child { border-bottom: 0; }
+  #root { padding: var(--space-4); }
+</style>
+</head>
+<body class="sx-root">
+<div id="root"></div>
+<script>
+  var S = window.SecAI, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(
+    h('div',{className:'ds-stack',style:{maxWidth:'640px'}},
+      h(S.DomainVerification,{domain:'example.com',method:'dns_txt',token:'7f3a9c21e4b04d18a6'}))
+  );
+</script>
+</body>
+</html>

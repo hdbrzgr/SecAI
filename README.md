@@ -1,0 +1,89 @@
+# SecAI
+
+Open-source, self-hostable, AI-powered security scanning. Users verify they own a website (and later connect GitHub repos), SecAI runs proven open-source security tools against it, and an AI layer turns the raw output into a prioritized list of vulnerabilities with clear, stack-specific fix guidance.
+
+- **Plan & architecture:** [docs/PLAN.md](docs/PLAN.md)
+- **Roadmap / TODO:** [docs/TODO.md](docs/TODO.md)
+- **Install on a server:** [docs/INSTALL.md](docs/INSTALL.md) · [upgrade](docs/UPGRADE.md) · [backup](docs/BACKUP.md) · [hardening](docs/HARDENING.md) · [legal templates](docs/legal/)
+- **Design system:** [packages/ui](packages/ui) · [in Claude Design](https://claude.ai/artifact/Eu7M6wukvHRi69oLHyuLSE)
+- **Stack decisions:** [docs/STACK.md](docs/STACK.md)
+
+## Quick start (self-hosted)
+
+Requirements: Docker with Compose, and a server with 4 GB RAM for a real deployment.
+
+```bash
+git clone https://github.com/hdbrzgr/SecAI.git && cd SecAI
+cp .env.example .env
+# Set SECAI_SECRET_KEY, POSTGRES_PASSWORD and SECAI_ZAP_API_KEY in .env
+# (python3 -c "import secrets; print(secrets.token_urlsafe(48))")
+docker compose up -d --build
+```
+
+Open http://localhost:3000 and create an account. **The first account becomes the instance admin.**
+
+For a public server with HTTPS (Caddy and Let's Encrypt), email, and AI analysis, follow **[docs/INSTALL.md](docs/INSTALL.md)**: it's one `docker compose --profile https up -d --build` after setting your domain.
+
+## Running an instance
+
+- **Admin panel** (`/admin`, admins only): usage overview and service status, users (deactivate, make admin), sign-up and per-workspace limits, a switch that pauses all scanning, a domain blocklist, and an audit log of scans, ownership proofs, account security events and admin changes.
+- **Email** (optional SMTP): email confirmation before adding websites, password reset, and a "scan finished" email with the grade.
+- **Housekeeping**: the worker deletes expired sessions and tokens and fails scans left behind by a crashed worker, every 10 minutes.
+
+## Development
+
+| Part | Location | Commands |
+|---|---|---|
+| API (FastAPI) | `apps/api` | `uv sync` · `uv run uvicorn app.main:app --reload` · `uv run pytest` · `uv run ruff check .` · `uv run alembic upgrade head` |
+| Worker (ARQ) | `apps/api/app/worker.py` | `uv run arq app.worker.WorkerSettings` |
+| Web (Next.js) | `apps/web` | from the repo root: `npm install` · `npm run dev -w secai-web` · `npm run lint -w secai-web` |
+| Design system | `packages/ui` | `npm run build -w @secai/ui` (regenerates `src/tokens.css`, fonts, the Claude Design files) · `npm run check -w @secai/ui` |
+
+The API needs Postgres and Redis. The simplest way to get them locally is `docker compose up -d postgres redis`, then publish their ports or use local installs. See `apps/api/app/core/config.py` for every `SECAI_*` setting.
+
+## What a website scan checks
+
+Add a website, prove you own it (DNS TXT record, a file at `/.well-known/secai-verify.txt`, or a `<meta name="secai-verify">` tag), confirm you're authorized, then run a scan. The worker runs:
+
+| Scanner | Checks |
+|---|---|
+| Headers | HTTPS and HTTP→HTTPS redirect, HSTS, CSP, clickjacking protection, nosniff, Referrer-Policy, version disclosure, CORS, cookie flags |
+| TLS | Certificate trust and hostname, expiry, TLS 1.0/1.1 support |
+| Exposed files | `.git`, `.env`, `.svn`, `.DS_Store`, phpinfo, server-status, config backups, AWS credentials (confirmed by content, contents of secrets never stored) |
+| Nuclei | ProjectDiscovery's HTTP templates; `dos`, `fuzz`, `bruteforce` and `intrusive` templates are excluded; rate limited |
+| OWASP ZAP | Spiders the site (5 minutes max) and runs ZAP's passive rules: CSRF tokens, SRI, mixed content, cross-domain scripts, information leaks and more. Baseline only: no attack payloads |
+
+Findings are normalized, deduplicated and graded A–F. ZAP runs on its own Docker network with the worker, so it can't reach the database or Redis.
+
+## AI analysis (optional)
+
+Set `SECAI_ANTHROPIC_API_KEY` in `.env` and the worker sends each scan's findings to Claude (`claude-opus-5` by default; `SECAI_AI_MODEL` and `SECAI_AI_EFFORT` change it). The report then shows:
+
+- a short summary and the findings to fix first,
+- per finding: whether it's likely real, needs review or is likely a false positive, a severity for this site, a plain explanation, fix steps for the software the site runs, and a config or code example.
+
+How it's kept safe:
+
+- **Redaction:** secrets, tokens, keys and long opaque strings are stripped before anything leaves your instance. Contents of exposed secret files are never collected in the first place.
+- **Untrusted input:** scanner output comes from the scanned site, so it's sent as data inside `<scan_data>`, the model is told not to follow instructions in it, and the answer must match a fixed schema.
+- **The grade stays the scanners':** the A–F grade is computed from scanner severities, not from the AI's opinion, so nothing on a site can argue its grade up.
+- **Refusal fallback:** security content can trip safety classifiers, so requests use the API's server-side `fallbacks: "default"`; set `SECAI_AI_FALLBACKS=false` if your API proxy rejects it.
+
+Without a key, scans work exactly the same and the report says AI analysis is off.
+
+**Scanner safety.** Every connection to a user's site goes through a guard that resolves the hostname, refuses private, loopback, link-local and cloud-metadata addresses, pins the connection to the checked address and re-checks every redirect. `SECAI_SCAN_ALLOW_PRIVATE=true` lifts this for local development only; the API refuses to start with it in production.
+
+## Security design (so far)
+
+- Passwords hashed with **argon2id**. Login timing is the same whether or not the account exists.
+- **Server-side sessions:** random tokens stored only as SHA-256 hashes. Cookies are HttpOnly, SameSite=Lax, and Secure + `__Host-` prefixed on HTTPS. Sessions have idle and absolute expiry.
+- **CSRF protection:** every state-changing request must come from the web app's origin.
+- **Rate limiting** on login (per IP and per email), registration and 2FA attempts.
+- **TOTP two-factor auth:** secrets are encrypted at rest, codes can't be replayed, and the session token is rotated after the second factor.
+- Security headers on the API and web app (CSP, frame blocking, nosniff, HSTS on HTTPS). Containers run as non-root, and the API isn't exposed outside the Docker network.
+
+## License
+
+SecAI is free software under the **GNU AGPL-3.0** with one extra term (AGPL §7(b)): anyone running, hosting or distributing SecAI must keep the visible **"Powered by SecAI by hdbrzgr"** credit in the UI. If you host a modified version, you must publish your changes. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
+
+Only scan systems you own or have written permission to test.

@@ -1,0 +1,156 @@
+# SecAI — self-hosted stack. Quick start:
+#   cp .env.example .env   # then set SECAI_SECRET_KEY and POSTGRES_PASSWORD
+#   docker compose up -d --build
+# The web app is served on http://localhost:3000. For a real deployment use HTTPS:
+#   docker compose --profile https up -d --build   (Caddy + Let's Encrypt, see docs/INSTALL.md)
+
+x-api-env: &api-env
+  SECAI_ENV: ${SECAI_ENV:-production}
+  SECAI_SECRET_KEY: ${SECAI_SECRET_KEY:?set SECAI_SECRET_KEY in .env}
+  SECAI_WEB_ORIGIN: ${SECAI_WEB_ORIGIN:-http://localhost:3000}
+  SECAI_ALLOW_REGISTRATION: ${SECAI_ALLOW_REGISTRATION:-true}
+  SECAI_SCANS_PER_DAY_PER_ORG: ${SECAI_SCANS_PER_DAY_PER_ORG:-20}
+  SECAI_VERIFICATION_MAX_AGE_DAYS: ${SECAI_VERIFICATION_MAX_AGE_DAYS:-90}
+  SECAI_MAX_TARGETS_PER_ORG: ${SECAI_MAX_TARGETS_PER_ORG:-25}
+  SECAI_SMTP_HOST: ${SECAI_SMTP_HOST:-}
+  SECAI_SMTP_PORT: ${SECAI_SMTP_PORT:-587}
+  SECAI_SMTP_USERNAME: ${SECAI_SMTP_USERNAME:-}
+  SECAI_SMTP_PASSWORD: ${SECAI_SMTP_PASSWORD:-}
+  SECAI_SMTP_FROM: ${SECAI_SMTP_FROM:-SecAI <secai@localhost>}
+  SECAI_SMTP_SECURITY: ${SECAI_SMTP_SECURITY:-starttls}
+  SECAI_ANTHROPIC_API_KEY: ${SECAI_ANTHROPIC_API_KEY:-}
+  SECAI_DATABASE_URL: postgresql+asyncpg://secai:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/secai
+  SECAI_REDIS_URL: redis://redis:6379/0
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: secai
+      POSTGRES_DB: secai
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U secai -d secai"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "60", "1", "--appendonly", "no"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./apps/api
+      target: api
+    restart: unless-stopped
+    # Not published on the host: only the web container reaches it, so the forwarded client IP
+    # it trusts can only come from the Next.js proxy.
+    environment: *api-env
+    command: ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips '*'"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  worker:
+    # Runs the scans: the only container that talks to users' websites.
+    build:
+      context: ./apps/api
+      target: worker
+    restart: unless-stopped
+    environment:
+      <<: *api-env
+      SECAI_ZAP_URL: http://zap:8090
+      SECAI_ZAP_API_KEY: ${SECAI_ZAP_API_KEY:?set SECAI_ZAP_API_KEY in .env}
+      # Optional: AI analysis of findings with Claude.
+      SECAI_AI_MODEL: ${SECAI_AI_MODEL:-claude-opus-5}
+      SECAI_AI_EFFORT: ${SECAI_AI_EFFORT:-high}
+    networks: [default, scanners]
+    depends_on:
+      api: { condition: service_healthy }
+      zap: { condition: service_healthy }
+
+  # OWASP ZAP in daemon mode, driven by the worker over its API. It sits on its own network
+  # with the worker only, so it can't reach Postgres or Redis, and its port isn't published.
+  zap:
+    image: zaproxy/zap-stable:2.17.0
+    restart: unless-stopped
+    command:
+      - zap.sh
+      - -daemon
+      - -host
+      - 0.0.0.0
+      - -port
+      - "8090"
+      - -config
+      - api.key=${SECAI_ZAP_API_KEY:?set SECAI_ZAP_API_KEY in .env}
+      - -config
+      - api.addrs.addr.name=.*
+      - -config
+      - api.addrs.addr.regex=true
+    networks: [scanners]
+    mem_limit: 2g
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf -H \"X-ZAP-API-Key: $$SECAI_ZAP_API_KEY\" http://localhost:8090/JSON/core/view/version/ >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    environment:
+      SECAI_ZAP_API_KEY: ${SECAI_ZAP_API_KEY:?set SECAI_ZAP_API_KEY in .env}
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        API_INTERNAL_URL: http://api:8000
+    restart: unless-stopped
+    ports:
+      # Localhost only by default: reach it through Caddy (profile "https") or an SSH tunnel.
+      - "${SECAI_WEB_BIND:-127.0.0.1}:${SECAI_WEB_PORT:-3000}:3000"
+    depends_on:
+      api: { condition: service_healthy }
+
+  # Optional HTTPS with automatic certificates: docker compose --profile https up -d
+  caddy:
+    image: caddy:2
+    profiles: ["https"]
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      SECAI_DOMAIN: ${SECAI_DOMAIN:-localhost}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - web
+
+networks:
+  default:
+  scanners:
+
+volumes:
+  postgres-data:
+  redis-data:
+  caddy-data:
+  caddy-config:
